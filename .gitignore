@@ -3,8 +3,22 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
-*.so
+# Archive files
+**/*.7z
+**/*.zip
+**/*.tar.gz
+**/*.rar
+
+# temporary data
+**/*temp*
+*.db
+
+# Spreadsheet files
+**/*.xlsx
+**/*.xls
+**/*.csv
+**/*.parquet
+**/*.ipynb_checkpoints
 
 # Distribution / packaging
 .Python
