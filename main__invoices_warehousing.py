@@ -23,9 +23,6 @@ from utils._references import (
 
 # based on current file location, assuming it's root
 root_path = os.path.dirname(os.path.abspath(__file__))
-# paths that will have some static file in the application
-dump_path = os.path.join(root_path, "dump")
-utils_path = os.path.join(root_path, "utils")
 
 
 _MIGRATE_DATABASE=True
@@ -37,10 +34,7 @@ def main_bg_invoice_warehousing():
 
     _start_time = get_current_utc_time()
     bg_logger = create_logger(
-        os.path.join(
-            dump_path,
-            "_warehousing.log"
-        ),
+        "./_warehousing.log",
     )
 
     bg_logger.info("This is a test message.")
