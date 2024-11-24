@@ -3,12 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Archive files
-**/*.7z
-**/*.zip
-**/*.tar.gz
-**/*.rar
-
 # temporary data
 **/*temp*
 *.db
