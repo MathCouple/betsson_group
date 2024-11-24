@@ -6,6 +6,7 @@ import unicodedata
 from datetime import datetime
 
 
+
 def sanitize_column_data(bg_logger, df, column, c_dtype=str, fillna_v='0z0'):
     """
     Corrects and specializes the data column format, replacing invalid values with NaN.
