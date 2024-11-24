@@ -8,6 +8,23 @@ from typing import Callable
 import pandas as pd
 
 
+def get_csv_df(bg_logger, file_path, **kwargs) -> pd.DataFrame:
+    """
+    Reads a CSV file into a DataFrame.
+    Args:
+        bg_logger: Logger instance for logging.
+        file_path: Path to the CSV file.
+    Returns:
+        The DataFrame.
+    """
+    start_time = datetime.now()
+    df = pd.read_csv(
+        file_path,
+        **kwargs
+    )
+    bg_logger.info("CSV file read into DataFrame in %s", str(datetime.now() - start_time))
+    return df
+
 def stage_base_transformer(f_normatize_str_column: Callable, bg_logger, df) -> pd.DataFrame:
     """
     -- Not all parameters is being visually "typed". Callable are not usually intuitive. --

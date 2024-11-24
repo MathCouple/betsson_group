@@ -17,4 +17,5 @@ from utils.file_handler import (
 __all__ = [
     "create_logger",
     "get_current_utc_time",
+    "extract_7z"
 ]

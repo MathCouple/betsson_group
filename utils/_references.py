@@ -12,6 +12,8 @@ import logging
 import uuid
 
 
+
+# pylint: disable=C0103
 class __UUIDFilter(logging.Filter):
     """
     Internal utils
