@@ -17,7 +17,8 @@ from utils import (
 
 from infra.pipeline import (
     PipelineTransformer,
-    sanitize_column_data
+    sanitize_column_data,
+    sanitize_text
 )
 
 
@@ -73,7 +74,8 @@ def main_bg_invoice_warehousing():
 
     # Initialize the transformer
     transformer = PipelineTransformer(
-        bg_logger=bg_logger
+        bg_logger=bg_logger,
+        f_sanitize_text=sanitize_text
     )
 
     # Process stage I

@@ -29,15 +29,16 @@ class PipelineTransformer:
     """
     A class responsible for applying transformation logic for different stages of the pipeline.
     """
-    def __init__(self, bg_logger):
+    def __init__(self, bg_logger, f_sanitize_text: Callable):
         """
         Initialize the PipelineTransformer.
 
         Args:
-            f_sanitize_column_data: A callable function to normalize string columns.
+            f_sanitize_text: A callable function to normalize string columns.
             bg_logger: Logger instance for logging.
         """
         self.bg_logger = bg_logger
+        self.f_sanitize_text = f_sanitize_text
 
     def stage_1(self, f_sanitize_column_data: Callable, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -51,19 +52,19 @@ class PipelineTransformer:
 
         # Specialized string dtypes
         df['Invoice'] = f_sanitize_column_data(
-            self.bg_logger, df, 'Invoice', fillna_v='Unspecified'
+            self.bg_logger, df, 'Invoice', 
         )
         df['StockCode'] = f_sanitize_column_data(
-            self.bg_logger, df, 'StockCode', fillna_v='Unspecified'
+            self.bg_logger, df, 'StockCode', 
         )
         df['Description'] = f_sanitize_column_data(
-            self.bg_logger, df, 'Description', fillna_v='Unspecified'
+            self.bg_logger, df, 'Description', 
         )
         df['Customer ID'] = f_sanitize_column_data(
-            self.bg_logger, df, 'Customer ID', fillna_v='Unspecified'
+            self.bg_logger, df, 'Customer ID', 
         )
         df['Country'] = f_sanitize_column_data(
-            self.bg_logger, df, 'Country', fillna_v='Unspecified'
+            self.bg_logger, df, 'Country', 
         )
 
         # Specialized numeric dtypes, NaN for invalid values
@@ -73,6 +74,9 @@ class PipelineTransformer:
         # Specialized datetime to ISO 8601, NaT for invalid values
         df['InvoiceDate'] = pd.to_datetime(df['InvoiceDate'], errors='coerce')
         df['InvoiceDate'] = df['InvoiceDate'].dt.strftime('%Y-%m-%dT%H:%M:%S')
+
+        # Sanitize well-known column names
+        df.columns = ['invoice', 'stock_code', 'description', 'quantity', 'invoice_date', 'price', 'customer_id', 'country']
 
         self.bg_logger.info(
             "Stage 1 transformations completed in %s", 
