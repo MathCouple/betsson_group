@@ -50,7 +50,7 @@ def sanitize_text(text):
 
     # 1. Remove accents
     text = ''.join(
-        c for c in unicodedata.normalize('NFD', text) 
+        c for c in unicodedata.normalize('NFD', text)
         if unicodedata.category(c) != 'Mn'
     )
 

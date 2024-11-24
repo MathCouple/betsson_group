@@ -34,3 +34,15 @@ def extract_7z(bg_logger, file_path):
     )
     extract_dir = None
     del extract_dir
+
+
+def validate_file_exists(bg_logger, file_path):
+    """
+    Validates if a file exists.
+
+    :param file_path: Path to the file to validate.
+    :return: True if the file exists, False otherwise.
+    """
+    if not os.path.exists(file_path):
+        bg_logger.critical("File %s does not exist", file_path)
+        raise FileNotFoundError(f"File {file_path} does not exist")

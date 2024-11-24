@@ -11,11 +11,13 @@ from utils._references import (
     get_current_utc_time,
 )
 from utils.file_handler import (
-    extract_7z
+    extract_7z,
+    validate_file_exists
 )
 
 __all__ = [
     "create_logger",
     "get_current_utc_time",
-    "extract_7z"
+    "extract_7z",
+    'validate_file_exists'
 ]
