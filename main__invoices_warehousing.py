@@ -73,12 +73,12 @@ def main_bg_invoice_warehousing():
 
     # Initialize the transformer
     transformer = PipelineTransformer(
-        f_normatize_str_column=sanitize_column_data,
         bg_logger=bg_logger
     )
 
     # Process stage I
     stage_i_df = transformer.stage_1(
+        sanitize_column_data,
         base_df
     )
     transformer.save_parquet_stage(

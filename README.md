@@ -129,13 +129,12 @@
 ### 1.1 Base Considerations
 
 There are two main logic on this assesment answers
-  - One that demonstrates deeply understanding of the purpose of the seletive process, with a logical/straightforward solution approach.
+  - One that demonstrates deeply understanding of the purpose of the seletive process, with a logical/straightforward solution approach. It's the solution.ipynb. ipynb solutions starts General Code Structure. But their functions can be 
   - The other one is more structured and reusable, thinking on best long-term practices and reusability. Still addressing the same problem.
 
 As a professional data engineer, I have some knowledge in managing the chaotic nature of real-world data, a common challenge faced by most organizations. My goal is to address the challenges posed by this selective while showcasing the delivery of reliable and efficient solutions tailored to specific business needs.
 
 - Additionally, I aim to demonstrate how data and code can be democratized and standardized across organizations, fostering scalability, collaboration, and long-term value.
-
 <br>
 
 ***I hope you enjoy the read.***
@@ -206,21 +205,28 @@ As a professional data engineer, I have some knowledge in managing the chaotic n
 - **`main_adjusted_retail_analysis.py`**: It will make use of each separated modules to perform the analysis. Thinking on best practices and reusability.
 
 ### 3.2. infra
-- Models
+- models
   - Dimensional and fact models.
     - `dim.py` - all dimensional to our DW models.
     - `fact.py` - all fact to our DW models.
-- Handlers
-  - General handlers for database related and data processing.
-    - `db_migration_handler.py` - Alembic migration handler. It is supposed to run once, and it will create the database and tables. As well with the possible indexes, based on the warehouse models.
-    - `msql_handler.py` - MSSQL connection handler. It will be used to return the connection engine to be orchestrated by sqlalchemy/alembic/direct-queries.
+- pipeline
+  - Dimensional and fact models.
     - `pipeline_metadata.py` - References to metadata process. Like Mapping, etc.
-      - NORMATIZE_LOCATION_MAP - a dict containing the mapping of normalized location names.
+    - `pipeline_lineage.py` - It stores stages related to the pipeline.
+      - get_csv_df - Reads CSV files into pandas DataFrame format.
+      - PipelineTransformer - BR Contains every stage and their transformations, as well as a saving method.
     - `pipeline_transformers.py` - Business rules (BR) and general transformations (GR) to be used on the pipeline.
       - sanitize_column_data - BR related to fill null data and format types.
       - sanitize_text - BR related to sanitize text data. It will remove special characters, and replace accented characters with their unaccented counterparts.
 
-### 3.3. _ingestion
+- handlers
+  - General handlers for database related and data processing.
+    - `db_migration_handler.py` - Alembic migration handler. It is supposed to run once, and it will create the database and tables. As well with the possible indexes, based on the warehouse models.
+    - `msql_handler.py` - MSSQL connection handler. It will be used to return the connection engine to be orchestrated by sqlalchemy/alembic/direct-queries.
+      - NORMATIZE_LOCATION_MAP - a dict containing the mapping of normalized location names.
+
+
+### 3.3. ingestion
 - Ingested data as 7z.
 - Extracted data as csv/xls.
 

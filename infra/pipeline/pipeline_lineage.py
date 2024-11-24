@@ -29,18 +29,17 @@ class PipelineTransformer:
     """
     A class responsible for applying transformation logic for different stages of the pipeline.
     """
-    def __init__(self, f_normatize_str_column: Callable, bg_logger):
+    def __init__(self, bg_logger):
         """
         Initialize the PipelineTransformer.
 
         Args:
-            f_normatize_str_column: A callable function to normalize string columns.
+            f_sanitize_column_data: A callable function to normalize string columns.
             bg_logger: Logger instance for logging.
         """
-        self.f_normatize_str_column = f_normatize_str_column
         self.bg_logger = bg_logger
 
-    def stage_1(self, df: pd.DataFrame) -> pd.DataFrame:
+    def stage_1(self, f_sanitize_column_data: Callable, df: pd.DataFrame) -> pd.DataFrame:
         """
         Applies the first stage of transformations to the data.
         Args:
@@ -51,19 +50,19 @@ class PipelineTransformer:
         start_time = datetime.now()
 
         # Specialized string dtypes
-        df['Invoice'] = self.f_normatize_str_column(
+        df['Invoice'] = f_sanitize_column_data(
             self.bg_logger, df, 'Invoice', fillna_v='Unspecified'
         )
-        df['StockCode'] = self.f_normatize_str_column(
+        df['StockCode'] = f_sanitize_column_data(
             self.bg_logger, df, 'StockCode', fillna_v='Unspecified'
         )
-        df['Description'] = self.f_normatize_str_column(
+        df['Description'] = f_sanitize_column_data(
             self.bg_logger, df, 'Description', fillna_v='Unspecified'
         )
-        df['Customer ID'] = self.f_normatize_str_column(
+        df['Customer ID'] = f_sanitize_column_data(
             self.bg_logger, df, 'Customer ID', fillna_v='Unspecified'
         )
-        df['Country'] = self.f_normatize_str_column(
+        df['Country'] = f_sanitize_column_data(
             self.bg_logger, df, 'Country', fillna_v='Unspecified'
         )
 
