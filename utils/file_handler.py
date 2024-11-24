@@ -30,7 +30,7 @@ def extract_7z(bg_logger, file_path):
     # Log success message with extraction details
     bg_logger.info(
         "Data successfully extracted to directory %s. Duration: %s",
-        extract_dir, datetime.now() - start_time
+        extract_dir, duration
     )
     extract_dir = None
     del extract_dir
