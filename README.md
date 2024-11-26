@@ -338,7 +338,7 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 
 - **Requirements**: Python 3.9+ and Jupyter Notebook.
 - **Use a virtual environment**: `python -m venv .venv`
-- **Installation**: Run `pip install -r requirements_xxx.txt`. The requirements file includes two sets of dependencies: one specifically for the Jupyter Notebook (.ipynb) and another for the Python-based script. This separation ensures that the notebook's additional dependencies are only installed if you plan to use it, keeping the main script lightweight and efficient.
+- **Installation**: Run `pip install -r requirements.txt`. The requirements file includes two sets of dependencies: one specifically for the Jupyter Notebook (.ipynb) and another for the Python-based script. This separation ensures that the notebook's additional dependencies are only installed if you plan to use it, keeping the main script lightweight and efficient.
 - **Create and fill a file called '.env' in the root directory of this project. Fill it with the following environment variables**:
   ```bash
     MSSQL_WAREHOUSE_URL="mssql+pyodbc://<username>:<password>@<host>/<database>?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
@@ -346,14 +346,17 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 - **Run the main script**: `python solution.py` on your terminal, from the root project diretory.
 
 ### 3.1. Main Script
-- **`solution.ipynb`**: Straightforward End-to-End Approach to Address the Challenge
-- **`main_adjusted_retail_analysis.py`**: Example of a dedicated pipeline, including all modules. Lineage tracker ready, with space to implement a run back from stopped stage.
+- **`draw.ipynb`**: Development notebook. Contains all the exploratory data analysis (EDA) and data cleaning steps. It also includes the initial data quality check and the first assumptions and abnormalities identified.
+- **`solution.py`**: Example of a dedicated pipeline, including all modules. Possible Lineage tracker, with space to implement a run back from stopped stage.
+- **`.env`**: Requirement to DW experience.
 
 ### 3.2. infra
 - models
   - Dimensional and fact models.
     - `dim.py` - all dimensional to our DW models.
     - `fact.py` - all fact to our DW models.
+    - `facts_integrity.py` - all base validators to our fact in the DW.
+    - `dims_integrity.py` - all base validators to our dims in the DW.
 
 - pipeline
   - Pipeline specif codes
@@ -383,7 +386,6 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 
 - handlers
   - General handlers for database related and data processing.
-    - `db_migration_handler.py` - Alembic migration handler. It is supposed to run once, and it will create the database and tables. As well with the possible indexes, based on the warehouse models.
     - `msql_handler.py` - MSSQL connection handler. It will be used to return the connection engine to be orchestrated by sqlalchemy/alembic/direct-queries.
 
 
