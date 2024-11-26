@@ -38,7 +38,6 @@
   - [0.1.1 Base General Process](#base-general-process)
   - [0.1.2 Base ETL Considerations](#base-etl-considerations)
   - [0.1.3 Base Warehouse Considerations](#base-warehouse-considerations)
-  - [0.1.4 Bonus](#bonus) 
 - [1. Assumptions & Abnormalities](#1-assumptions--abnormalities)
   - [1.1 Base Considerations](#11-base-considerations)
   - [1.1 Overall Data Assumptions](#12-overall-data-assumptions)
@@ -240,13 +239,16 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 </p>
 
 
-# 2.1 Data Warehouse Schema Diagram
+## 2.1 Data Warehouse Schema Diagram
+<p align="center">
+  <img src="./assets/retail_dw_er.png" alt="ER DW Diagram" style="max-width: 100%; width: 900px;">
+</p>
 
-# 2.2 Documentation
+## 2.2 Documentation
 
-## Tables and Columns
+### Tables and Columns
 
-### `dim_time`
+#### `dim_time`
 | Column        | Description                                                                 |
 |---------------|-----------------------------------------------------------------------------|
 | `time_id`     | Primary key for the time dimension.                                         |
@@ -263,7 +265,7 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 
 ---
 
-### `dim_location`
+#### `dim_location`
 | Column          | Description                                                              |
 |------------------|--------------------------------------------------------------------------|
 | `location_id`    | Primary key for the location dimension.                                  |
@@ -271,7 +273,7 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 
 ---
 
-### `dim_customer`
+#### `dim_customer`
 | Column             | Description                                                          |
 |---------------------|----------------------------------------------------------------------|
 | `customer_id`       | Primary key for the customer dimension.                              |
@@ -280,7 +282,7 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 
 ---
 
-### `dim_product`
+#### `dim_product`
 | Column         | Description                                                              |
 |-----------------|--------------------------------------------------------------------------|
 | `product_id`    | Primary key for the product dimension.                                   |
@@ -289,7 +291,7 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 
 ---
 
-### `dim_metadata_transactions`
+#### `dim_metadata_transactions`
 | Column                   | Description                                                    |
 |---------------------------|----------------------------------------------------------------|
 | `metadata_id`             | Primary key for the metadata transactions table.              |
@@ -298,7 +300,7 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 
 ---
 
-### `fact_sales_transactions`
+#### `fact_sales_transactions`
 | Column         | Description                                                              |
 |-----------------|--------------------------------------------------------------------------|
 | `transaction_id`| Primary key for the fact table.                                          |
@@ -322,7 +324,7 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 - **Requirements**: Python 3.9+ and Jupyter Notebook.
 - **Use a virtual environment**: `python -m venv .venv`
 - **Installation**: Run `pip install -r requirements_xxx.txt`. The requirements file includes two sets of dependencies: one specifically for the Jupyter Notebook (.ipynb) and another for the Python-based script. This separation ensures that the notebook's additional dependencies are only installed if you plan to use it, keeping the main script lightweight and efficient.
-- **Fill .env in the root directory**:
+- **Create and fill a file called '.env' in the root directory of this project**:
   ```bash
     export MSSQL_SERVER="your_mssql_server"
     export MSSQL_DATABASE="your_mssql_database"
