@@ -8,63 +8,42 @@ __table_args__ - Scheman name and Index for the table declarations
 vars with Column use - columns of the table
 """
 from sqlalchemy import (
-    Column, Integer,
-    Float, ForeignKey,
-    Index
+    Column, Integer, String, Float, Date, Boolean, ForeignKey
 )
+from sqlalchemy.orm import relationship, declarative_base
 
 from . import Base
 
 
 _SCHEMA_NAME = 'sales_warehousing'
 
-class SalesFact(Base):
-    """
-    Represents the central fact table for sales transactions.
 
-    Schema: sales_warehousing
+class FactSalesTransaction(Base):
+    """
+    Represents the fact table for transactions in the data warehouse.
 
     Attributes:
-        sales_id (int): Primary key for the table.
-        product_id (int): Foreign key linking to the product_dimension table.
-        customer_id (int): Foreign key linking to the customer_dimension table.
-        timestamp_id (int): Foreign key linking to the time_dimension table.
-        region_id (int): Foreign key linking to the region_dimension table.
-        quantity (int): Quantity of items sold in the transaction.
-        price (float): Unit price of the product in the transaction.
+        transaction_id (int): Primary key for the transaction fact table.
+        time_id (int): Foreign key referencing the time dimension.
+        location_id (int): Foreign key referencing the location dimension.
+        customer_id (int): Foreign key referencing the customer dimension (nullable).
+        product_id (int): Foreign key referencing the product dimension.
+        metadata_id (int): Foreign key referencing the metadata transactions dimension.
+        invoice_id (int): Unique identifier for the invoice.
+        quantity (int): Number of units involved in the transaction.
+        price (float): Price per unit of the product (nullable; may include refunds or adjustments).
     """
-    __tablename__ = 'sales_fact'
-    __table_args__ = (
-        Index('idx_product_price', 'product_id', 'price'),
-        Index('idx_customer_region', 'customer_id', 'region_id'),
-        Index('idx_timestamp', 'timestamp_id'),
-        # {'schema': f'{_SCHEMA_NAME}'},
-    )
+    __tablename__ = 'fact_sales_transactions'
+    __table_args__ = {'schema': _SCHEMA_NAME}
 
-    sales_id = Column(
-        Integer,
-        primary_key=True,
-        autoincrement=True
-    )
-    product_id = Column(
-        Integer,
-        ForeignKey('product_dimension.product_id'),
-        nullable=False
-    )
-    customer_id = Column(
-        Integer,
-        ForeignKey('customer_dimension.customer_id'),
-        nullable=True
-    )
-    timestamp_id = Column(
-        Integer,
-        ForeignKey('time_dimension.timestamp_id'),
-        nullable=False
-    )
-    region_id = Column(
-        Integer,
-        ForeignKey('region_dimension.region_id'),
-        nullable=False
-    )
+    transaction_id = Column(Integer, primary_key=True, autoincrement=True)
+    time_id = Column(Integer, ForeignKey('sales_warehousing.dim_time.time_id'), nullable=False)
+    location_id = Column(Integer, ForeignKey('sales_warehousing.dim_location.location_id'), nullable=False)
+    customer_id = Column(Integer, ForeignKey('sales_warehousing.dim_customer.customer_id'), nullable=True)
+    product_id = Column(Integer, ForeignKey('sales_warehousing.dim_product.product_id'), nullable=False)
+    metadata_id = Column(Integer, ForeignKey('sales_warehousing.dim_metadata_transactions.metadata_id'), nullable=False)
+    invoice_id = Column(Integer, nullable=False)
     quantity = Column(Integer, nullable=False)
-    price = Column(Float, nullable=False)
+    price = Column(Float, nullable=True)
+
+    metadata_transactions = relationship("DimMetadataTransaction", back_populates="transactions")

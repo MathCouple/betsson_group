@@ -1,3 +1,4 @@
+annotated-types==0.7.0
 Brotli==1.1.0
 greenlet==3.1.1
 inflate64==1.0.0
@@ -9,6 +10,8 @@ py7zr==0.22.0
 pyarrow==18.0.0
 pybcj==1.0.2
 pycryptodomex==3.21.0
+pydantic==2.10.1
+pydantic_core==2.27.1
 pyppmd==1.1.0
 python-dateutil==2.9.0.post0
 pytz==2024.2
