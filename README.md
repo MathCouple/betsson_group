@@ -63,6 +63,7 @@
 - [4. General Code Structure](#4-general-code-structure)
 - [Aggregations & Reporting](#aggregations--reporting)
   - [1. Insight - (AVTQ) Absolute Value of Transaction Quantities and Revenues across different categories](#1-insight---avtq-absolute-value-of-transaction-quantities-and-revenues-across-different-categories)
+  - [2. Insight - (SLICR) Sales Location Impact Comparison on Revenue](#2-insight---slicr-sales-location-impact-comparison-on-revenue)
   - [4. Data-Driven Deep](#4-data-driven-deep)
 - [Tunning Scenario](#tunning-scenario)
 
@@ -423,11 +424,12 @@ Code can include intermediate passes like "saving stages".
 
 ## Aggregations & Reporting
 
-There are one main file in the data composition. All views could be a Materialized (gpt, correct it. I'm not sure if MSSQL has this feature) view, to be used in the future.
+**I'm considering that the data is accurate enough (based on assumed prior reviews), and these represent real insights.**
+
 
 ### Aggregations.sql
 
-#### 1. Insight - (AVTQ) Absolute Value of Transaction Quantities and Revenues across different categories.
+#### 1. Insight - (AVTQ): Absolute Value of Transaction Quantities and Revenues across different categories.
 
 Magnitude of operational activity within each transaction category, without distinguishing between income and expense.
 
@@ -475,14 +477,67 @@ ORDER BY
 
 <br>
 
-#### 2. Insight - (AVTQ) Sales location impact on revenue.
+#### 2. Insight - (SLICR): Sales Location Impact Comparison on Revenue
+Monthly contribution of sales transactions by location, expressed as a percentage of the total absolute revenue for all sales transactions.
+A transaction is a sale when transaction_category = 'sale'.
 
+```sql
+WITH location_sales AS (
+    SELECT
+        l.location_name,
+        t.year,
+        t.month,
+        SUM(f.quantity) AS total_sales_quantity,
+        SUM(f.quantity * f.price) AS total_sales_revenue
+    FROM master.sales_warehousing.fact_sales_transactions AS f
+    INNER JOIN master.sales_warehousing.dim_location AS l
+        ON f.location_id = l.location_id
+    INNER JOIN master.sales_warehousing.dim_time AS t
+        ON f.time_id = t.time_id
+    INNER JOIN master.sales_warehousing.dim_metadata_transactions AS m
+        ON f.metadata_id = m.metadata_id
+    WHERE m.transaction_category = 'sale'
+    GROUP BY
+        l.location_name, t.year, t.month
+),
+total_revenue AS (
+    SELECT
+        SUM(ABS(total_sales_revenue)) AS absolute_total_revenue
+    FROM location_sales
+)
+SELECT
+    ls.location_name,
+    ls.year,
+    ls.month,
+    ls.total_sales_quantity,
+    ls.total_sales_revenue,
+    ABS(ls.total_sales_revenue) AS absolute_sales_revenue,
+    (ABS(ls.total_sales_revenue) / tr.absolute_total_revenue) * 100 AS absolute_percentage_of_total
+FROM location_sales AS ls
+CROSS JOIN total_revenue AS tr
+ORDER BY
+    absolute_percentage_of_total DESC,
+    ls.year DESC,
+    ls.month DESC;
+```
+
+<div style="display: flex; align-items: center; justify-content: center;">
+  <p style="max-width: 400px; margin-right: 20px;">
+    This visualization demonstrates the (SLICR): Sales Location Impact Comparison on Revenue analysis results.
+    This scenario highlights locations with a higher percentage of sales revenue. Based on these insights, we can create targeted promotions and enhance marketing strategies in strong locations while identifying opportunities to explore untapped potential in weaker locations.
+    A solid approach would involve analyzing the factors contributing to the performance of both strong and weak locations, followed by implementing appropriate campaigns and lead generation strategies.
+  </p>
+  <img src="./assets/slicr_result.png" alt="AVQT result" style="max-width: 100%; width: 700px;">
+</div>
+
+
+<br>
+<br>
 
 ### 4. Data-Driven Deep
-- We can now explore different scenarios:
-  - 1 - For instance, the first insight provides a general overview of what happened in a specific year. From there, we could adopt monthly approaches to better understand the seasonality of this pain point. By offering the best services to our clients, we can also gain deeper insights into how to remain truly competitive.
-  - 2 - Our approaches are determined by business rules and the data we have available. These factors also shape the reports we aim to generate and follow.
-  - 3 - And many others.
+- Our approaches are determined by business rules and the data we have available. These factors also shape the reports we aim to generate and follow.
+- The first insight provides a general overview of what happened in the specific date range. From there, we could adopt monthly approaches to better understand the seasonality of this pain point. By offering the best services to our clients, we can also gain deeper insights into how to remain truly competitive.
+- The second insight provides a more detailed view of the data, focusing on the location impact on revenue. This approach could be used to identify the best locations to invest in, as well as the locations that need more attention. Monitoring and properly acting, we avoid weaking strong locations.
 
 *In data we trust*
 

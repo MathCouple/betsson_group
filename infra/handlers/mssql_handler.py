@@ -100,7 +100,7 @@ def create_warehouse_schema(engine):
             connection.execute(text("""
                 CREATE SCHEMA sales_warehousing';
             """))
-        except SQLAlchemyError:
+        except SQLAlchemyError as exc:
             try:
                 connection.execute(text("""
                     IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'sales_warehousing')
@@ -108,5 +108,5 @@ def create_warehouse_schema(engine):
                         EXEC('CREATE SCHEMA sales_warehousing');
                     END
                 """))
-            except SQLAlchemyError as exc:
-                raise RuntimeError("Error creating warehouse schema.") from exc
+            except SQLAlchemyError as inner_exc:
+                raise RuntimeError("Error creating warehouse schema.") from inner_exc
