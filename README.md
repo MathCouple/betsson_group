@@ -62,6 +62,8 @@
   - [3.5. assets](#35-assets)
 - [4. General Code Structure](#4-general-code-structure)
 - [Aggregations & Reporting](#aggregations--reporting)
+  - [1. Insight - (AVTQ) Absolute Value of Transaction Quantities and Revenues across different categories](#1-insight---avtq-absolute-value-of-transaction-quantities-and-revenues-across-different-categories)
+  - [4. Data-Driven Deep](#4-data-driven-deep)
 - [Tunning Scenario](#tunning-scenario)
 
 ---
@@ -422,12 +424,65 @@ Code can include intermediate passes like "saving stages".
 ## Aggregations & Reporting
 
 There are one main file in the data composition. All views could be a Materialized (gpt, correct it. I'm not sure if MSSQL has this feature) view, to be used in the future.
-- aggregations.sql
-  - Contains three different aggregations.
-    - Total sales per product.
-    - Total sales per customer.
-    - Total sales per location.
+### Aggregations.sql
 
+#### 1. Insight - (AVTQ) Absolute Value of Transaction Quantities and Revenues across different categories.
+
+Magnitude of operational activity within each transaction category, without distinguishing between income and expense.
+
+```sql
+WITH category_totals AS (
+    SELECT
+        m.transaction_category,
+        m.transaction_description,
+        SUM(ABS(f.quantity)) AS total_sales_quantity,
+        SUM(ABS(f.quantity * f.price)) AS total_sales_revenue
+    FROM master.sales_warehousing.fact_sales_transactions AS f
+    INNER JOIN master.sales_warehousing.dim_metadata_transactions AS m
+        ON f.metadata_id = m.metadata_id
+    GROUP BY
+        m.transaction_category,
+        m.transaction_description
+),
+grand_total AS (
+    SELECT
+        SUM(ct.total_sales_revenue) AS grand_total_sales_revenue
+    FROM category_totals AS ct
+)
+SELECT
+    ct.transaction_category,
+    ct.transaction_description,
+    ct.total_sales_quantity,
+    ct.total_sales_revenue,
+    (ct.total_sales_revenue / gt.grand_total_sales_revenue) * 100 AS percentage_of_total_sales_revenue
+FROM category_totals AS ct
+CROSS JOIN grand_total AS gt
+ORDER BY
+    percentage_of_total_sales_revenue DESC;
+```
+
+<div style="display: flex; align-items: center; justify-content: center;">
+  <p style="max-width: 400px; margin-right: 20px;">
+    This visualization demonstrates the Absolute Volume and Quantity Transaction (AVQT) analysis results.
+    This scenario highlights offenders like product returns, generating insights into how
+    we could approach reducing the return rate by, for instance, 80%, focusing on the top 20% reasons.
+    Strategies might include gathering customer feedback, understanding reasons for returns, and so on.
+    Product quality checks, customer service improvements, and other strategies could be implemented.
+  </p>
+  <img src="./assets/avqt_result.png" alt="AVQT result" style="max-width: 100%; width: 700px;">
+</div>
+
+
+### 4. Data-Driven Deep
+- We can now explore different scenarios:
+  - 1 - For instance, the first insight provides a general overview of what happened in a specific year. From there, we could adopt monthly approaches to better understand the seasonality of this pain point. By offering the best services to our clients, we can also gain deeper insights into how to remain truly competitive.
+  - 2 - Our approaches are determined by business rules and the data we have available. These factors also shape the reports we aim to generate and follow.
+  - 3 - And many others.
+
+*In data we trust*
+
+<br>
+<br>
 
 ---
 ### Tunning Scenario
@@ -451,7 +506,7 @@ Understand base columns to be indexed
 - Statistics: They are crucial to the optimizer. There is no logical in having indexes without updated statistics.
   - Governance to set frequent statistics updates.
 - Partitioning, if necessary.
-- Cost Threshold, etc.
+- Cost Threshold, parallelism, and other high-level  server configurations.
 
 We would need approaches like governance, to ensure optimal database performance. Consumption governance (help with querie base good practices). Among others.
 
