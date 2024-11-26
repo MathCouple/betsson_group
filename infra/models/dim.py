@@ -44,14 +44,14 @@ class DimTime(Base):
     __tablename__ = 'dim_time'
     __table_args__ = {'schema': _SCHEMA_NAME}
 
-    time_id = Column(String, primary_key=True)
-    date = Column(Date, nullable=False)
-    year = Column(Integer, nullable=False)
-    quarter = Column(Integer, nullable=False)
-    month = Column(Integer, nullable=False)
-    day = Column(Integer, nullable=False)
-    week = Column(Integer, nullable=False)
-    day_of_week = Column(String(10), nullable=False)
+    time_id = Column(String(32), primary_key=True)
+    date = Column(Date, nullable=True)
+    year = Column(Integer, nullable=True)
+    quarter = Column(Integer, nullable=True)
+    month = Column(Integer, nullable=True)
+    day = Column(Integer, nullable=True)
+    week = Column(Integer, nullable=True)
+    day_of_week = Column(String(10), nullable=True)
     hour = Column(Integer, nullable=True)
     minute = Column(Integer, nullable=True)
     second = Column(Integer, nullable=True)
@@ -70,7 +70,7 @@ class DimLocation(Base):
     __tablename__ = 'dim_location'
     __table_args__ = {'schema': _SCHEMA_NAME}
 
-    location_id = Column(String, primary_key=True)
+    location_id = Column(String(32), primary_key=True)
     location_name = Column(String(255), nullable=True)
 
     transactions = relationship("FactSalesTransaction", back_populates="location")
@@ -88,7 +88,7 @@ class DimCustomer(Base):
     __tablename__ = 'dim_customer'
     __table_args__ = {'schema': _SCHEMA_NAME}
 
-    customer_id = Column(String, primary_key=True)
+    customer_id = Column(String(32), primary_key=True)
     customer_code = Column(String(255), nullable=True)
     is_known_customer = Column(Boolean, nullable=False)
 
@@ -107,9 +107,9 @@ class DimProduct(Base):
     __tablename__ = 'dim_product'
     __table_args__ = {'schema': _SCHEMA_NAME}
 
-    product_id = Column(String, primary_key=True)
-    stock_code = Column(String(255), nullable=False)
-    description = Column(String(255), nullable=False)
+    product_id = Column(String(32), primary_key=True)
+    stock_code = Column(String(255), nullable=True)
+    description = Column(String(255), nullable=True)
 
     transactions = relationship("FactSalesTransaction", back_populates="product")
 
@@ -127,8 +127,8 @@ class DimMetadataTransaction(Base):
     __tablename__ = 'dim_metadata_transactions'
     __table_args__ = {'schema': 'sales_warehousing'}
 
-    metadata_id = Column(String, primary_key=True)
-    transaction_description = Column(String(255), nullable=False)
-    transaction_category = Column(String(50), nullable=False)
+    metadata_id = Column(String(32), primary_key=True, nullable=False)
+    transaction_description = Column(String(255), nullable=True)
+    transaction_category = Column(String(50), nullable=True)
 
     transactions = relationship("FactSalesTransaction", back_populates="metadata_transactions")

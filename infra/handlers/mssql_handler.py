@@ -77,7 +77,7 @@ class MssqlConnector:
         if self.engine is None:
             raise RuntimeError("Engine is not initialized. Please connect to the database first.")
         return self.engine
-    
+
     def close_connection(self):
         """
         Closes the database connection.
@@ -89,3 +89,24 @@ class MssqlConnector:
             self._logger.info("Database connection closed.")
         else:
             self._logger.warning("Database connection is already closed.")
+
+def create_warehouse_schema(engine):
+    """
+    Creates a schema in the database if it does not exist.
+    Raises an error if the issue is connection-related.
+    """
+    with engine.begin() as connection:
+            try:
+                connection.execute(text("""
+                    CREATE SCHEMA sales_warehousing';
+                """))
+            except SQLAlchemyError:
+                try:
+                    connection.execute(text("""
+                        IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'sales_warehousing')
+                        BEGIN
+                            EXEC('CREATE SCHEMA sales_warehousing');
+                        END
+                    """))
+                except SQLAlchemyError:
+                    raise RuntimeError("Error creating warehouse schema.")

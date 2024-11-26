@@ -61,7 +61,8 @@
   - [3.4. utils](#34-utils)
   - [3.5. assets](#35-assets)
 - [4. General Code Structure](#4-general-code-structure)
-- [Aditional Notes](#additional-notes)
+- [Aggregations & Reporting](#aggregations--reporting)
+- [Tunning Scenario](#tunning-scenario)
 
 ---
 
@@ -131,6 +132,8 @@ Consideration:
   - Assumptions usually are discussed with the areas/teams involved. In a real-world scenario, I would discuss these assumptions with the business team to ensure that they are aligned with the business rules and requirements.
     - **This consideration applies to every main assumption I make.**
  
+ - This code is made on python + mssql.
+  - New data overwrite old data.
 <br>
 <br>
 
@@ -156,6 +159,8 @@ Consideration:
     - More complex cases involving large datasets, approaches can range from using a Cartesian mapping stored in a .txt file to developing a classification model to identify and standardize variations in location names automatically.
 
 - No special cases in invoice date column.
+
+- Warehouse inserted data was also approached with null scenarios. They were ignored, as they was threated as special cases. I'm assume I've maitaned referencial integrity.
 
 #### 1.3 Overall Data Abnormalities
 - Columns contain missing values that can represent various scenarios, ranging from errors/bugs to information that was not shared.
@@ -412,3 +417,44 @@ It doesn't make part of the codebase.
 - Save data.
 
 Code can include intermediate passes like "saving stages".
+
+
+## Aggregations & Reporting
+
+There are one main file in the data composition. All views could be a Materialized (gpt, correct it. I'm not sure if MSSQL has this feature) view, to be used in the future.
+- aggregations.sql
+  - Contains three different aggregations.
+    - Total sales per product.
+    - Total sales per customer.
+    - Total sales per location.
+
+
+---
+### Tunning Scenario
+*This will not be performed, but I'm assuming that I would use these aggregations to create reports for the business team. Here would be my approach for also tuning this scenario.*
+
+*This is a first basic approach. I'm assuming that there aren't logs yet (which could help identify most used columns, for instance).*
+
+- Tuning approach, client side:
+  - Query leveraging predicate filters.
+  - Understand the Logical plan by the optimizer:
+    - Identify bottlenecks in the execution plan by the optimizer.
+    - How could I induce the optimizer to better optimize the query plan?
+  - Understanding query optimal scenario tuning.
+  - Understanding query hints.
+
+Now, after having the execution plan and a proposed scenario, I can proceed to basic server-side tuning (assuming we are on a hybrid ecossystem).
+
+- Indexes: They need special considerations—the trade-off between maintenance and performance.
+Understand base columns to be indexed
+  - Understand base columns to be indexed
+- Statistics: They are crucial to the optimizer. There is no logical in having indexes without updated statistics.
+  - Governance to set frequent statistics updates.
+- Partitioning, if necessary.
+- Cost Threshold, etc.
+
+We would need approaches like governance, to ensure optimal database performance. Consumption governance (help with querie base good practices). Among others.
+
+
+---
+*Matheus Alves. @ 2024*

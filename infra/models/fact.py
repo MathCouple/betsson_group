@@ -37,13 +37,13 @@ class FactSalesTransaction(Base):
     __tablename__ = 'fact_sales_transactions'
     __table_args__ = {'schema': _SCHEMA_NAME}
 
-    transaction_id = Column(String, primary_key=True)
-    time_id = Column(String, ForeignKey('sales_warehousing.dim_time.time_id'), nullable=False)
-    location_id = Column(String, ForeignKey('sales_warehousing.dim_location.location_id'), nullable=False)
-    customer_id = Column(String, ForeignKey('sales_warehousing.dim_customer.customer_id'), nullable=True)
-    product_id = Column(String, ForeignKey('sales_warehousing.dim_product.product_id'), nullable=False)
-    metadata_id = Column(String, ForeignKey('sales_warehousing.dim_metadata_transactions.metadata_id'), nullable=False)
-    invoice_id = Column(String, nullable=False)
+    transaction_id = Column(String(32), primary_key=True)
+    time_id = Column(String(32), ForeignKey('sales_warehousing.dim_time.time_id'), nullable=False)
+    location_id = Column(String(32), ForeignKey('sales_warehousing.dim_location.location_id'), nullable=False)
+    customer_id = Column(String(32), ForeignKey('sales_warehousing.dim_customer.customer_id'), nullable=True)
+    product_id = Column(String(32), ForeignKey('sales_warehousing.dim_product.product_id'), nullable=False)
+    metadata_id = Column(String(32), ForeignKey('sales_warehousing.dim_metadata_transactions.metadata_id'), nullable=False)
+    invoice_id = Column(String(32), nullable=False)
     quantity = Column(Integer, nullable=False)
     price = Column(DECIMAL(precision=10, scale=2), nullable=True) 
 

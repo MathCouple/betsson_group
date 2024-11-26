@@ -23,9 +23,9 @@ from infra.pipeline import (
 )
 from infra.handlers import (
     MssqlConnector,
-    migrate_database
+    create_warehouse_schema
 )
-
+from infra.models import Base
 
 # Load environment variables
 dotenv.load_dotenv()
@@ -122,14 +122,15 @@ def main_bg_invoice_warehousing():
                 MSSQL_WAREHOUSE_URL
             )
             engine = mssql_instance.connect()
-            migrate_database(bg_logger, engine)
+            create_warehouse_schema(engine)
+            Base.metadata.create_all(bind=engine)
             transformer.generates_dw_tables(
                 stage_iii_df,
                 engine
             )
 
         except Exception as e:  # pylint: disable=broad-except
-            bg_logger.error("Error migrating data to the warehouse: %s", e)
+            bg_logger.error("Error migrating/saving data to the warehouse: %s", e)
         finally:
             mssql_instance.close_connection()
 

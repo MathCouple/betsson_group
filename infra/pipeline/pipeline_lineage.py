@@ -9,6 +9,7 @@ from typing import Callable
 import numpy as np
 import pandas as pd
 import sqlalchemy.orm
+import sqlalchemy.exc as exc
 from sqlalchemy.orm import sessionmaker
 
 from infra.pipeline import (
@@ -264,7 +265,7 @@ class PipelineTransformer:
     def generates_dw_tables(self, df: pd.DataFrame, engine: sqlalchemy.engine.Engine) -> None:
         """
         Applies the fourth stage of transformations to the data, maps to ORM models,
-        validates, and inserts the data into the database.
+        validates, and inserts or updates the data into the database.
 
         Args:
             df: DataFrame containing the raw data.
@@ -295,7 +296,7 @@ class PipelineTransformer:
                 )
                 validate_data_integrity(self.bg_logger, _generating_integrity_test)
 
-                # Iterate over tables and insert data
+                # Iterate over tables and insert/update data
                 for table_name, table_data in _tables.items():
                     if table_name not in models_map:
                         self.bg_logger.warning(
@@ -306,7 +307,7 @@ class PipelineTransformer:
                     # Get the ORM model class
                     model_class = models_map[table_name]
                     self.bg_logger.info(
-                        "Inserting records into '%s' using ORM model '%s'.",
+                        "Inserting/updating records into '%s' using ORM model '%s'.",
                         table_name, model_class.__name__
                     )
 
@@ -316,22 +317,31 @@ class PipelineTransformer:
                             model_class(**row) for row in table_data.to_dict(orient="records")
                         ]
 
-                        # Insert into the database
-                        session.bulk_save_objects(records)
+                        # Perform an upsert (insert or update)
+                        for record in records:
+                            session.merge(record)  # Merge handles both insert and update
+
                         session.commit()
                         self.bg_logger.info(
-                            "Inserted %d records into '%s' successfully.",
+                            "Inserted/updated %d records into '%s' successfully.",
                             len(records), table_name
                         )
+                    except exc.IntegrityError as e:
+                        session.rollback()
+                        self.bg_logger.error(
+                            "Integrity error while inserting/updating data into '%s': %s",
+                            table_name, str(e)
+                        )
+                        raise
                     except Exception as e:
                         session.rollback()
                         self.bg_logger.error(
-                            "Error inserting data into '%s': %s", table_name, str(e)
+                            "Error inserting/updating data into '%s': %s", table_name, str(e)
                         )
                         raise
             finally:
                 self.bg_logger.info(
-                    "Stage IV Data Warehouse tables generated and inserted in %s",
+                    "Stage IV Data Warehouse tables generated and inserted/updated in %s",
                     datetime.now() - start_time
                 )
 
