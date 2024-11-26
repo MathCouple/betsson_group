@@ -239,111 +239,10 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
   <img src="./assets/pipeline_architecture_diagram.png" alt="Pipeline Architeture Diagram" style="max-width: 100%; width: 900px;">
 </p>
 
-<br>
-<br>
 
----
-## 3. Packages and modules overview
+# 2.1 Data Warehouse Schema Diagram
 
-### 3.0. Running the project
-
-- **Requirements**: Python 3.9+ and Jupyter Notebook.
-- **Use a virtual environment**: `python -m venv .venv`
-- **Installation**: Run `pip install -r requirements_xxx.txt`. The requirements file includes two sets of dependencies: one specifically for the Jupyter Notebook (.ipynb) and another for the Python-based script. This separation ensures that the notebook's additional dependencies are only installed if you plan to use it, keeping the main script lightweight and efficient.
-- **Fill .env-template**: Copy the `.env-template` to `.env` and fill the variables.
-- **Attention**: The flag `_MIGRATE_DATABASE` at the beginning of the main scripts is a boolean that controls the database migration behavior.
-  - When set to `True`, it will overwrite or create the database and tables.
-  - When set to `False`, it will append data to the existing database and tables, validating constraints only on natural keys.
-- **Run the main script**: `python main_one_time_analysis.py` on the root project diretory.
-
-### 3.1. Main Script
-- **`solution.ipynb`**: Straightforward End-to-End Approach to Address the Challenge
-- **`main_adjusted_retail_analysis.py`**: Example of a dedicated pipeline, including all modules. Lineage tracker ready, with space to implement a run back from stopped stage.
-
-### 3.2. infra
-- models
-  - Dimensional and fact models.
-    - `dim.py` - all dimensional to our DW models.
-    - `fact.py` - all fact to our DW models.
-
-- pipeline
-  - Pipeline specif codes
-    - `pipeline_metadata.py` - References to metadata process. Like Mapping, etc.
-        - NORMATIZE_LOCATION_MAP - a dict containing the mapping of normalized location names.
-    - `pipeline_lineage.py` - It stores stages related to the pipeline.
-      - get_csv_df - Reads CSV files into pandas DataFrame format.
-      - PipelineTransformer - BR Contains every stage and their transformations, as well as a saving method.
-    - `pipeline_transformers.py` - Business rules (BR) and general transformations (GR) to be used on the pipeline.
-      - sanitize_column_data - BR related to fill null data and format types.
-      - sanitize_text - BR related to sanitize text data. It will remove special characters, and replace accented characters with their unaccented counterparts.
-  
-- handlers
-  - General handlers for database related and data processing.
-    - `db_migration_handler.py` - Alembic migration handler. It is supposed to run once, and it will create the database and tables. As well with the possible indexes, based on the warehouse models.
-    - `msql_handler.py` - MSSQL connection handler. It will be used to return the connection engine to be orchestrated by sqlalchemy/alembic/direct-queries.
-
-
-### 3.3. ingestion
-- Ingested data as 7z.
-- Extracted data as csv/xls.
-
-### 3.4. utils
-- `_references.py` - base code references, like logging, etc.
-  - get_current_utc_time - datetime now in UTC time.
-  - create_logger - created supposed to use as unique logger for the application.
-- `file_handlers.py` - utilities to write/read/process/format files.
-  - extract_7z - It will extract the 7z file to a folder. This one is our "imaginary API".
-
-### 3.5. assets
-- Images and other assets used on README.md and other documentation.
-It doesn't make part of the codebase.
-
-<br>
-<br>
-
----
-
-## 4. General Code Structure
-
-### 4.1. Data Understainding and base adjustments
-
-#### 4.1.1. Importing Base Dataframe
-- Load the data from the `_ingestion.Invoices_Year_2009-2010.csv` file.
-
-#### 4.1.1. Importing Base Dataframe
-- Load the data from the `_ingestion.Invoices_Year_2009-2010.csv` file.
-
-#### 4.1.2. Briefly Checking the Data
-  - Quick overview of the dataset.
-  - Display dataset information and types.
-  - Quick overview of minimum and maximum values in the data.
-  - Quick overview of nulls and base critical values in the data.
-  - Understanding raw memory consumption.
-  - Understanding unique values in the data.
-
-#### 4.1.3. Digging into the Data Types and Suggesting Base Corrections
-- Formatting column dtypes
-- Formatting column names
-- Removing "test" data.
-
-
-#### 4.1.4. Lineage Checkup
-- Stage-final consistency checkup.
-- Write changes into a parquet file to keep track of lineage and all modifications made to the data from the previous stage.
-
-#### 4.1.5. Deeply addresing columns dtypes and content
-- Governance and basic data quality layer:
-  - Columns are normalized and sanitized.
-  - Columns are formatted to the correct data type.
-
----
-
-## Additional Notes
-- It’s possible to map the mode of StockCode and compare it with the base descriptions to better understand general cases.
-
-- It’s possible to map the mode of StockCode and adjust prices based on the mode of the same StockCode.
-
-# Data Warehouse Schema Documentation
+# 2.2 Documentation
 
 ## Tables and Columns
 
@@ -411,3 +310,111 @@ It doesn't make part of the codebase.
 | `invoice_id`    | Unique identifier for the invoice.                                       |
 | `quantity`      | Number of units involved in the transaction (can be negative for returns). |
 | `price`         | Price per unit of the product (nullable; may include refunds or adjustments). |
+
+<br>
+<br>
+
+---
+## 3. Packages and modules overview
+
+### 3.0. Running the project
+
+- **Requirements**: Python 3.9+ and Jupyter Notebook.
+- **Use a virtual environment**: `python -m venv .venv`
+- **Installation**: Run `pip install -r requirements_xxx.txt`. The requirements file includes two sets of dependencies: one specifically for the Jupyter Notebook (.ipynb) and another for the Python-based script. This separation ensures that the notebook's additional dependencies are only installed if you plan to use it, keeping the main script lightweight and efficient.
+- **Fill .env in the root directory**:
+  ```bash
+    export MSSQL_SERVER="your_mssql_server"
+    export MSSQL_DATABASE="your_mssql_database"
+    export MSSQL_USER="your_mssql_user"
+    export MSSQL_PASSWORD="your_mssql_password"
+  ```
+- **Attention**: The flag `_MIGRATE_DATABASE` at the beginning of the main scripts is a boolean that controls the database migration behavior.
+  - When set to `True`, it will overwrite or create the database and tables.
+  - When set to `False`, it will append data to the existing database and tables, validating constraints only on natural keys.
+- **Run the main script**: `python main_one_time_analysis.py` on the root project diretory.
+
+### 3.1. Main Script
+- **`solution.ipynb`**: Straightforward End-to-End Approach to Address the Challenge
+- **`main_adjusted_retail_analysis.py`**: Example of a dedicated pipeline, including all modules. Lineage tracker ready, with space to implement a run back from stopped stage.
+
+### 3.2. infra
+- models
+  - Dimensional and fact models.
+    - `dim.py` - all dimensional to our DW models.
+    - `fact.py` - all fact to our DW models.
+
+- pipeline
+  - Pipeline specif codes
+    - `pipeline_metadata.py` - References to metadata process. Like Mapping, etc.
+        - NORMATIZE_LOCATION_MAP - a dict containing the mapping of normalized location names.
+        - CLOUD_LOST_PRODUCTS_WORDS - a list of words that indicate lost products.
+        - STAGE_III_COLUMNS - renamed columns to be used in the pipeline.
+        - validation_models - mapper containing Pydantic models to validate the data.
+
+    - `pipeline_lineage.py` - It stores stages related to the pipeline.
+      - get_csv_df - Reads CSV files into pandas DataFrame format.
+      - PipelineTransformer - BR Contains every stage and their transformations, as well as a saving method.
+    - `pipeline_transformers.py` - Business rules (BR) and general transformations (GR) to be used on the pipeline.
+      - sanitize_column_data - BR related to fill null data and format types.
+      - sanitize_text - BR related to sanitize text data. It will remove special characters, and replace accented characters with their unaccented counterparts.
+      - BaseTableGenerator - GR related to generate base tables.
+      - DimTimeGenerator - GR related to generate the time dimension.
+      - DimLocationGenerator - GR related to generate the location dimension.
+      - DimCustomerGenerator - GR related to generate the customer dimension.
+      - DimProductGenerator - GR related to generate the product dimension.
+      - DimMetadataTransactionsGenerator - GR related to generate the metadata transactions dimension.
+      - FactSalesTransactionsGenerator - GR related to generate the sales transactions fact table.
+      - generate_warehouse_sales_tables - GR related to generate the warehouse tables.
+      - validate_warehouse_sales_data - BR related to validate the warehouse tables.
+      - validate_data_integrity - BR related to validate the data integrity.
+
+- handlers
+  - General handlers for database related and data processing.
+    - `db_migration_handler.py` - Alembic migration handler. It is supposed to run once, and it will create the database and tables. As well with the possible indexes, based on the warehouse models.
+    - `msql_handler.py` - MSSQL connection handler. It will be used to return the connection engine to be orchestrated by sqlalchemy/alembic/direct-queries.
+
+
+### 3.3. ingestion
+- Ingested data as 7z.
+- Extracted data as csv/xls.
+
+### 3.4. utils
+- `_references.py` - base code references, like logging, etc.
+  - get_current_utc_time - datetime now in UTC time.
+  - create_logger - created supposed to use as unique logger for the application.
+- `file_handlers.py` - utilities to write/read/process/format files.
+  - extract_7z - It will extract the 7z file to a folder. This one is our "imaginary API".
+
+### 3.5. assets
+- Images and other assets used on README.md and other documentation.
+It doesn't make part of the codebase.
+
+<br>
+<br>
+
+---
+
+## 4. General Code Structure
+
+- Load the data.
+- Understand data scenario.
+- Avoided generic changes to the data on the beginning.
+- Created specific changes to the data per column.
+  - Revisit different columns while exploring possible business rules.
+- Transformate specific columns.
+- Quick overview of transformations.
+- Check data as a whole, after specific transformation.
+- Apply generic changes on data.
+- Validate transformations.
+- Generates warehouse transformations.
+- Validate warehouse transformations.
+- Save data.
+
+Code can include intermediate passes like "saving stages".
+---
+
+## Additional Notes
+- It’s possible to map the mode of StockCode and compare it with the base descriptions to better understand general cases.
+
+- It’s possible to map the mode of StockCode and adjust prices based on the mode of the same StockCode.

@@ -69,7 +69,6 @@ def sanitize_text(text):
 
     return text
 
-
 class BaseTableGenerator:
     """
     Base class for table generation with shared preprocessing methods.
@@ -113,10 +112,12 @@ class DimTimeGenerator(BaseTableGenerator):
         """
         Creates the dim_time table from the preprocessed data.
         """
-        dim_time = self.df[['invoice_date', 'year', 'quarter', 'month', 'day', 'week', 'day_of_week']].drop_duplicates()
+        dim_time = self.df[[
+            'invoice_date', 'year', 'quarter',
+            'month', 'day', 'week', 'day_of_week'
+        ]].drop_duplicates()
         dim_time['time_id'] = range(1, len(dim_time) + 1)
         return dim_time
-
 
 class DimLocationGenerator(BaseTableGenerator):
     """
@@ -126,10 +127,11 @@ class DimLocationGenerator(BaseTableGenerator):
         """
         Creates the dim_location table from the preprocessed data.
         """
-        dim_location = self.df[['location']].drop_duplicates().rename(columns={'location': 'location_name'})
+        dim_location = self.df[[
+            'location'
+        ]].drop_duplicates().rename(columns={'location': 'location_name'})
         dim_location['location_id'] = range(1, len(dim_location) + 1)
         return dim_location
-
 
 class DimProductGenerator(BaseTableGenerator):
     """
@@ -143,7 +145,6 @@ class DimProductGenerator(BaseTableGenerator):
         dim_product['product_id'] = range(1, len(dim_product) + 1)
         return dim_product
 
-
 class DimMetadataTransactionGenerator(BaseTableGenerator):
     """
     Generates the dim_metadata_transactions table.
@@ -152,27 +153,38 @@ class DimMetadataTransactionGenerator(BaseTableGenerator):
         """
         Creates the dim_metadata_transactions table from the preprocessed data.
         """
-        dim_metadata_transactions = self.df[['transaction_category']].drop_duplicates()
+        dim_metadata_transactions = self.df[[
+            'transaction_category'
+        ]].drop_duplicates()
         dim_metadata_transactions['metadata_id'] = range(1, len(dim_metadata_transactions) + 1)
-        dim_metadata_transactions['transaction_description'] = dim_metadata_transactions['transaction_category'].str.title()
+        dim_metadata_transactions['transaction_description'] = (
+            dim_metadata_transactions['transaction_category'].str.title()
+        )
         return dim_metadata_transactions
-
 
 class FactSalesTransactionGenerator(BaseTableGenerator):
     """
     Generates the fact_sales_transactions table.
     """
-    def generate_table(self, dim_time: pd.DataFrame, dim_location: pd.DataFrame,
-                       dim_product: pd.DataFrame, dim_metadata_transactions: pd.DataFrame) -> pd.DataFrame:
+    def generate_table(
+            self, dim_time: pd.DataFrame, dim_location: pd.DataFrame,
+            dim_product: pd.DataFrame, dim_metadata_transactions: pd.DataFrame
+    ) -> pd.DataFrame:
         """
-        Creates the fact_sales_transactions table, linking dimension tables with the main dataset.
+        Creates the fact_sales_transactions table,
+        linking dimension tables with the main dataset.
         """
         self.df['invoice'] = self.df['invoice'].astype(str)
 
-        fact_sales_transactions = self.df.merge(dim_time, on=['invoice_date', 'year', 'quarter', 'month', 'day', 'week', 'day_of_week'], how='left')\
-                                   .merge(dim_location, left_on='location', right_on='location_name', how='left')\
-                                   .merge(dim_product, on=['stock_code', 'description'], how='left')\
-                                   .merge(dim_metadata_transactions, on=['transaction_category'], how='left')
+        fact_sales_transactions = self.df.merge(
+            dim_time, on=[
+                'invoice_date', 'year', 'quarter',
+                'month', 'day', 'week', 'day_of_week'
+            ], how='left')\
+            .merge(dim_location, left_on='location', right_on='location_name', how='left')\
+            .merge(dim_product, on=['stock_code', 'description'], how='left')\
+            .merge(dim_metadata_transactions, on=['transaction_category'], how='left'
+        )
         fact_sales_transactions = fact_sales_transactions[[
             'time_id', 'location_id', 'customer_id', 'product_id', 'metadata_id',
             'invoice', 'quantity', 'price'
@@ -180,6 +192,17 @@ class FactSalesTransactionGenerator(BaseTableGenerator):
         fact_sales_transactions.rename(columns={'invoice': 'invoice_id'}, inplace=True)
         return fact_sales_transactions
 
+class DimCustomerGenerator(BaseTableGenerator):
+    """
+    Generates the dim_customer table.
+    """
+    def generate_table(self) -> pd.DataFrame:
+        """
+        Creates the dim_customer table from the preprocessed data.
+        """
+        dim_customer = self.df[['customer_id', 'customer_code']].drop_duplicates()
+        dim_customer['is_known_customer'] = ~dim_customer['customer_code'].isna()
+        return dim_customer
 
 def generate_warehouse_sales_tables(bg_logger, data: pd.DataFrame):
     """
@@ -212,19 +235,25 @@ def generate_warehouse_sales_tables(bg_logger, data: pd.DataFrame):
     dim_metadata_transactions = dim_metadata_gen.generate_table()
     bg_logger.info("dim_metadata_transactions table generated successfully.")
 
+    dim_customer_gen = DimCustomerGenerator(base_gen.df)
+    dim_customer = dim_customer_gen.generate_table()
+    bg_logger.info("dim_customer table generated successfully.")
+
     fact_gen = FactSalesTransactionGenerator(base_gen.df)
     fact_sales_transactions = fact_gen.generate_table(dim_time, dim_location, dim_product, dim_metadata_transactions)
-    bg_logger.info("fact_sales_transactions table generated successfully.")
+    bg_logger.info(
+        "fact_sales_transactions table generated successfully."
+    )
 
     bg_logger.info("All tables generated successfully.")
     return {
         'dim_time': dim_time,
         'dim_location': dim_location,
         'dim_product': dim_product,
+        'dim_customer': dim_customer,
         'dim_metadata_transactions': dim_metadata_transactions,
-        'fact_sales_transactions': fact_sales_transactions
+        'fact_sales_transactions': fact_sales_transactions,
     }
-
 
 def validate_warehouse_sales_data(
     bg_logger,
@@ -236,9 +265,11 @@ def validate_warehouse_sales_data(
     Validates the data in each table against its corresponding Pydantic model.
 
     Args:
-        bg_logger: Logger for logging validation information.
+        bg_logger:
+            Logger for logging validation information.
         dataframes (Dict[str, pd.DataFrame]): A dictionary mapping table names to Pandas DataFrames.
-        validation_models (Dict[str, Type[BaseModel]]): A dictionary mapping table names to Pydantic validation models.
+        validation_models (Dict[str,
+            Type[BaseModel]]): A dictionary mapping table names to Pydantic validation models.
         return_valid_rows (bool): If True, includes valid rows in the results.
 
     Returns:
@@ -258,6 +289,7 @@ def validate_warehouse_sales_data(
 
         for idx, row in df.iterrows():
             try:
+                # pylint: disable=unused-variable
                 # Attempt to validate the row
                 validated_row = model(**row.to_dict())
                 if return_valid_rows:
@@ -274,3 +306,19 @@ def validate_warehouse_sales_data(
         }
 
     return results
+
+def validate_data_integrity(bg_logger, data_integrity_check: Dict[str, Any]):
+    """
+    Logs the results of the data integrity check.
+    """
+
+    for table, result in data_integrity_check.items():
+        bg_logger.info(f"Table: {table}")
+        bg_logger.info(f"Valid rows: {result.get('valid_rows_count', 0)}")
+        bg_logger.info(f"Invalid rows: {result.get('invalid_rows_count', 0)}")
+
+        if result.get("errors"):
+            bg_logger.info(f"Errors: {result['errors'][:2]}")
+
+        bg_logger.info("*" * 32)
+    bg_logger.info("Data integrity check completed.")

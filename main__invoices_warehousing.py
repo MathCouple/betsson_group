@@ -75,21 +75,26 @@ def main_bg_invoice_warehousing():
     # Initialize the transformer
     transformer = PipelineTransformer(
         bg_logger=bg_logger,
-        f_sanitize_text=sanitize_text
+        f_sanitize_text=sanitize_text,
+        f_sanitize_column_data=sanitize_column_data
     )
 
     # Process stage I
     stage_i_df = transformer.stage_1(
-        sanitize_column_data,
         base_df
     )
-    transformer.save_parquet_stage(
-        stage_i_df,
-        os.path.join(root_path, "retail_stage_i.parquet"),
-        **overall_stage_save_params
+
+    stage_ii_df = transformer.stage_2(
+        stage_i_df
     )
-    stage_i_df = None
-    del stage_i_df
+
+    stage_iii_df = transformer.stage_3(
+        stage_ii_df
+    )
+
+    stage_iv_df = transformer.stage_4(
+        stage_iii_df
+    )
 
     # Generate warehouse-ready data for database
     # (Placeholder for future database migration logic)
