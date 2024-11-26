@@ -89,7 +89,6 @@
 
 
 ### Base General Process
-### Base General Process
 | Feature                                          | In Scope (MVP) | Out of Scope |
 |--------------------------------------------------|----------------|--------------|
 | README.md-based documentation (iterative view)  | ✅             |              |
