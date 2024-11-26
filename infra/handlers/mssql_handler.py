@@ -4,9 +4,10 @@ MSSQL Connection Handler
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.sql import text
 
 
-class DatabaseConnector:
+class MssqlConnector:
     """
     Class to manage database connections using SQLAlchemy.
 
@@ -17,17 +18,10 @@ class DatabaseConnector:
     
     Methods:
         connect: Creates the SQLAlchemy engine and establishes a connection to the database.
-        get_connection_pid: Returns the PID of the current database connection.
+        get_connection_pid: Returns the session ID (SPID) of the current database connection.
         get_engine: Returns the SQLAlchemy engine.
-    
-    Use example:
-        >>> from sqlalchemy.engine import Engine
-        >>> from infra.handlers.mssql_handler import DatabaseConnector
-        >>> db_connector = DatabaseConnector(logger, db_url)
-        >>> engine: Engine = db_connector.connect()
-        >>> connection_pid = db_connector.get_connection_pid()
-        >>> engine = db_connector.get_engine()
     """
+
     def __init__(self, logger, db_url: str):
         """
         Initialize the DatabaseConnector with the database URL.
@@ -47,11 +41,9 @@ class DatabaseConnector:
         """
         try:
             self.engine = create_engine(self.db_url)
-            with self.engine.connect() as connection:
-                self._logger.info(
-                    "Connected to the database successfully. PID: %s",
-                    connection.connection.connection.pid
-                )
+            with self.engine.connect() as connection: # pylint: disable=unused-variable
+                self._logger.info("Connected to the database successfully.")
+            self._logger.info("Engine created successfully.")
             return self.engine
         except SQLAlchemyError as e:
             self._logger.error("Failed to connect to the database: %s", str(e))
@@ -59,19 +51,22 @@ class DatabaseConnector:
 
     def get_connection_pid(self) -> int:
         """
-        Returns the PID of the current database connection.
+        Returns the session ID (SPID) of the current database connection.
 
-        :return: Connection PID.
+        :return: Session ID.
         """
         if self.engine is None:
             raise RuntimeError("Engine is not initialized. Please connect to the database first.")
 
         try:
             with self.engine.connect() as connection:
-                return connection.connection.connection.pid
+                result = connection.execute(text("SELECT @@SPID AS session_id;"))
+                spid = result.scalar()
+                self._logger.info("Retrieved SPID: %s", spid)
+                return spid
         except SQLAlchemyError as e:
-            self._logger.error("Error retrieving connection PID: %s", str(e))
-            raise RuntimeError("Error retrieving connection PID.") from e
+            self._logger.error("Error retrieving connection SPID: %s", str(e))
+            raise RuntimeError("Error retrieving connection SPID.") from e
 
     def get_engine(self) -> Engine:
         """
@@ -82,3 +77,15 @@ class DatabaseConnector:
         if self.engine is None:
             raise RuntimeError("Engine is not initialized. Please connect to the database first.")
         return self.engine
+    
+    def close_connection(self):
+        """
+        Closes the database connection.
+
+        :return: None
+        """
+        if self.engine is not None:
+            self.engine.dispose()
+            self._logger.info("Database connection closed.")
+        else:
+            self._logger.warning("Database connection is already closed.")

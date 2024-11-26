@@ -13,6 +13,7 @@ from infra.pipeline.pipeline_metadata import (
     CLOUD_LOST_PRODUCTS_WORDS,
     STAGE_III_COLUMNS,
     validation_models,
+    models_map
 )
 from infra.pipeline.pipeline_lineage import (
     get_csv_df,
@@ -32,4 +33,5 @@ __all__ = [
     'CLOUD_LOST_PRODUCTS_WORDS',
     'STAGE_III_COLUMNS',
     'validation_models',
+    'models_map'
 ]

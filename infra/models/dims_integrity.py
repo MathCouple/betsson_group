@@ -37,7 +37,7 @@ class DimTimeGenerator(BaseModel):
         self.df['second'] = self.df['invoice_date'].dt.second
 
         dim_time = self.df[[
-            'date', 'invoice_date', 'year',
+            'date', 'time_id', 'year',
             'quarter', 'month', 'day', 'week',
             'day_of_week', 'hour', 'minute',
             'second'
@@ -53,7 +53,7 @@ class DimLocationValidation(BaseModel):
     - `location_id`: Optional positive integer.
     - `location_name`: Mandatory string with a max length of 255 characters.
     """
-    location_id: str = Field(None, max_length=32)
+    location_id: Optional[str] = Field(None, max_length=32)
     location_name: Optional[str] = Field(None, max_length=255)
 
 class DimCustomerValidation(BaseModel):
@@ -63,7 +63,7 @@ class DimCustomerValidation(BaseModel):
     - `customer_code`: Optional string with a max length of 255 characters.
     - `is_known_customer`: Boolean indicating if the customer is identified.
     """
-    customer_id: str = Field(..., max_length=32)
+    customer_id: Optional[str] = Field(..., max_length=32)
     customer_code: Optional[str] = Field(None, max_length=255)
     is_known_customer: bool
 

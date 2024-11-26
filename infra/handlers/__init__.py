@@ -1,8 +1,10 @@
 """
 Infra handlers module
 """
-from infra.handlers import DatabaseConnector
+from infra.handlers.mssql_handler import MssqlConnector
+from infra.handlers.db_migration_handler import migrate_database
 
 __all__ = [
-    "DatabaseConnector"
+    "MssqlConnector",
+    "migrate_database"
 ]

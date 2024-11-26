@@ -20,12 +20,14 @@ import pandas as pd
 warnings.filterwarnings("ignore")
 
 
-def generate_hash(*args) -> str:
+def generate_hash(value: str) -> str:
     """
-    Generates a hash based on the provided arguments.
+    Generates a consistent hash for a given string value.
+    Handles None values gracefully.
     """
-    combined_string = ''.join(map(str, args))
-    return md5(combined_string.encode('utf-8')).hexdigest()
+    if value is None or pd.isna(value):
+        return None
+    return md5(str(value).encode()).hexdigest()
 
 def sanitize_column_data(bg_logger, df, column, c_dtype=str):
     """
@@ -81,15 +83,15 @@ def sanitize_text(text):
 
     return text
 
+
 class BaseTableGenerator:
     """
     Base class for table generation with shared preprocessing methods.
     """
-
     def __init__(self, dataframe: pd.DataFrame):
         self.df = dataframe
 
-    def standardize_category(self, row: dict) -> str:
+    def standardize_category(self, row: Dict[str, any]) -> str:
         """
         Maps specific columns to standardized categories.
         """
@@ -107,8 +109,8 @@ class BaseTableGenerator:
         """
         Standardize and prepare data for all tables.
         """
-        self.df['customer_id'] = self.df['customer_id'].astype(str)
         self.df['transaction_category'] = self.df.apply(self.standardize_category, axis=1)
+        self.df['time_id'] = pd.to_datetime(self.df['invoice_date'], errors='coerce')
         self.df['invoice_date'] = pd.to_datetime(self.df['invoice_date'], errors='coerce')
         self.df['year'] = self.df['invoice_date'].dt.year
         self.df['quarter'] = self.df['invoice_date'].dt.quarter
@@ -116,7 +118,6 @@ class BaseTableGenerator:
         self.df['day'] = self.df['invoice_date'].dt.day
         self.df['week'] = self.df['invoice_date'].dt.isocalendar().week
         self.df['day_of_week'] = self.df['invoice_date'].dt.day_name()
-        self.df['timestamp_id'] = self.df['invoice_date'].view('int64') // 10**9
 
 class DimTimeGenerator(BaseTableGenerator):
     """
@@ -127,10 +128,12 @@ class DimTimeGenerator(BaseTableGenerator):
         Creates the dim_time table from the preprocessed data.
         """
         dim_time = self.df[[
-            'invoice_date', 'year', 'quarter',
-            'month', 'day', 'week', 'day_of_week', 'timestamp_id'
+            'time_id', 'year', 'quarter',
+            'month', 'day', 'week', 'day_of_week'
         ]].drop_duplicates()
-        dim_time['time_id'] = dim_time['timestamp_id'].apply(generate_hash)
+        dim_time['time_id'] = self.df['invoice_date'].apply(
+            lambda x: generate_hash(str(pd.Timestamp(x).timestamp()))
+        )
         return dim_time
 
 class DimLocationGenerator(BaseTableGenerator):
@@ -147,27 +150,6 @@ class DimLocationGenerator(BaseTableGenerator):
         dim_location['location_id'] = dim_location['location_name'].apply(generate_hash)
         return dim_location
 
-class DimCustomerGenerator(BaseTableGenerator):
-    """
-    Generates the dim_customer table.
-    """
-    def generate_table(self) -> pd.DataFrame:
-        """
-        Creates the dim_customer table from the preprocessed data.
-        """
-        dim_customer = self.df['customer_id']
-        dim_customer['customer_id'].drop_duplicates(inplace=True)
-        dim_customer.rename(columns={'customer_id': 'customer_code'}, inplace=True)
-
-        # generates a hash for the customer_id
-        dim_customer['customer_id'] = dim_customer['customer_id'].apply(
-            lambda x: generate_hash(x) if pd.notna(x) else None
-        )
-        # Determine if the customer is known (not NaN)
-        dim_customer['is_known_customer'] = ~dim_customer['customer_code'].dim_customer()
-
-        return dim_customer
-
 class DimProductGenerator(BaseTableGenerator):
     """
     Generates the dim_product table.
@@ -177,9 +159,7 @@ class DimProductGenerator(BaseTableGenerator):
         Creates the dim_product table from the preprocessed data.
         """
         dim_product = self.df[['stock_code', 'description']].drop_duplicates()
-        dim_product['product_id'] = (
-            dim_product.apply(lambda row: generate_hash(row['stock_code'], row['description']), axis=1)
-        )
+        dim_product['product_id'] = dim_product['stock_code'].apply(generate_hash)
         return dim_product
 
 class DimMetadataTransactionGenerator(BaseTableGenerator):
@@ -190,54 +170,209 @@ class DimMetadataTransactionGenerator(BaseTableGenerator):
         """
         Creates the dim_metadata_transactions table from the preprocessed data.
         """
-        dim_metadata_transactions = self.df[['transaction_category']].drop_duplicates()
-        dim_metadata_transactions['metadata_id'] = (
-            dim_metadata_transactions['transaction_category'].apply(generate_hash)
-        )
+        dim_metadata_transactions = self.df[[
+            'transaction_category'
+        ]].drop_duplicates()
         dim_metadata_transactions['transaction_description'] = (
             dim_metadata_transactions['transaction_category'].str.title()
         )
+        dim_metadata_transactions['metadata_id'] = dim_metadata_transactions.apply(
+            lambda row: generate_hash(row['transaction_category'] + row['transaction_description']), axis=1
+        )
         return dim_metadata_transactions
+
+class DimCustomerGenerator(BaseTableGenerator):
+    """
+    Generates the dim_customer table.
+    """
+    def generate_table(self) -> pd.DataFrame:
+        """
+        Creates the dim_customer table from the preprocessed data.
+        """
+        dim_customer = self.df[['customer_id']].drop_duplicates()
+        dim_customer = dim_customer[dim_customer['customer_id'].notnull()]
+        dim_customer.rename(columns={'customer_id': 'customer_code'}, inplace=True)
+
+        # Generates a hash for the customer_id
+        dim_customer['customer_id'] = dim_customer['customer_code'].apply(
+            lambda x: generate_hash(x) if pd.notna(x) else None
+        )
+        # Determine if the customer is known (not NaN)
+        dim_customer['is_known_customer'] = dim_customer['customer_code'].notna()
+        return dim_customer
+
+
+class BaseTableGenerator:
+    """
+    Base class for table generation with shared preprocessing methods.
+    """
+    def __init__(self, dataframe: pd.DataFrame):
+        self.df = dataframe
+
+    def standardize_category(self, row: Dict[str, any]) -> str:
+        """
+        Maps specific columns to standardized categories.
+        """
+        if row.get("product_return") == 1:
+            return "return"
+        if not pd.isna(row.get("financial_details")):
+            return "financial adjustment"
+        if not pd.isna(row.get("maintenance_adjustment")):
+            return "maintenance adjustment"
+        if row.get("lost_sales") == 1:
+            return "lost sale"
+        return "sale"
+
+    def preprocess(self):
+        """
+        Standardize and prepare data for all tables.
+        """
+        self.df['transaction_category'] = self.df.apply(self.standardize_category, axis=1)
+        self.df['time_id'] = pd.to_datetime(self.df['invoice_date'], errors='coerce')
+        self.df['invoice_date'] = pd.to_datetime(self.df['invoice_date'], errors='coerce')
+        self.df['year'] = self.df['invoice_date'].dt.year
+        self.df['quarter'] = self.df['invoice_date'].dt.quarter
+        self.df['month'] = self.df['invoice_date'].dt.month
+        self.df['day'] = self.df['invoice_date'].dt.day
+        self.df['week'] = self.df['invoice_date'].dt.isocalendar().week
+        self.df['day_of_week'] = self.df['invoice_date'].dt.day_name()
+
+class DimTimeGenerator(BaseTableGenerator):
+    """
+    Generates the dim_time table.
+    """
+    def generate_table(self) -> pd.DataFrame:
+        """
+        Creates the dim_time table from the preprocessed data.
+        """
+        dim_time = self.df[[
+            'time_id', 'year', 'quarter',
+            'month', 'day', 'week', 'day_of_week'
+        ]].drop_duplicates()
+        dim_time['time_id'] = self.df['invoice_date'].apply(
+            lambda x: generate_hash(str(pd.Timestamp(x).timestamp()))
+        )
+        return dim_time
+
+class DimLocationGenerator(BaseTableGenerator):
+    """
+    Generates the dim_location table.
+    """
+    def generate_table(self) -> pd.DataFrame:
+        """
+        Creates the dim_location table from the preprocessed data.
+        """
+        dim_location = self.df[[
+            'location'
+        ]].drop_duplicates().rename(columns={'location': 'location_name'})
+        dim_location['location_id'] = dim_location['location_name'].apply(generate_hash)
+        return dim_location
+
+class DimProductGenerator(BaseTableGenerator):
+    """
+    Generates the dim_product table.
+    """
+    def generate_table(self) -> pd.DataFrame:
+        """
+        Creates the dim_product table from the preprocessed data.
+        """
+        dim_product = self.df[['stock_code', 'description']].drop_duplicates()
+        dim_product['product_id'] = dim_product['stock_code'].apply(generate_hash)
+        return dim_product
+
+class DimMetadataTransactionGenerator(BaseTableGenerator):
+    """
+    Generates the dim_metadata_transactions table.
+    """
+    def generate_table(self) -> pd.DataFrame:
+        """
+        Creates the dim_metadata_transactions table from the preprocessed data.
+        """
+        dim_metadata_transactions = self.df[[
+            'transaction_category'
+        ]].drop_duplicates()
+        dim_metadata_transactions['transaction_description'] = (
+            dim_metadata_transactions['transaction_category'].str.title()
+        )
+        dim_metadata_transactions['metadata_id'] = dim_metadata_transactions.apply(
+            lambda row: generate_hash(row['transaction_category'] + row['transaction_description']), axis=1
+        )
+        return dim_metadata_transactions
+
+class DimCustomerGenerator(BaseTableGenerator):
+    """
+    Generates the dim_customer table.
+    """
+    def generate_table(self) -> pd.DataFrame:
+        """
+        Creates the dim_customer table from the preprocessed data.
+        """
+        dim_customer = self.df[['customer_id']].drop_duplicates()
+        dim_customer = dim_customer[dim_customer['customer_id'].notnull()]
+        dim_customer.rename(columns={'customer_id': 'customer_code'}, inplace=True)
+
+        # Generates a hash for the customer_id
+        dim_customer['customer_id'] = dim_customer['customer_code'].apply(
+            lambda x: generate_hash(x) if pd.notna(x) else None
+        )
+        # Determine if the customer is known (not NaN)
+        dim_customer['is_known_customer'] = dim_customer['customer_code'].notna()
+        return dim_customer
 
 class FactSalesTransactionGenerator(BaseTableGenerator):
     """
     Generates the fact_sales_transactions table.
     """
     def generate_table(
-        self,
-        dim_time: pd.DataFrame, dim_location: pd.DataFrame,
-        dim_product: pd.DataFrame, dim_metadata_transactions: pd.DataFrame,
-        dim_customer: pd.DataFrame
+            self, dim_time: pd.DataFrame, dim_location: pd.DataFrame,
+            dim_product: pd.DataFrame, dim_metadata_transactions: pd.DataFrame,
     ) -> pd.DataFrame:
         """
         Creates the fact_sales_transactions table,
         linking dimension tables with the main dataset.
         """
         self.df['invoice'] = self.df['invoice'].astype(str)
+        self.df['time_id'] = self.df['time_id'].astype(str)
 
+        # Merge with dim_time
         fact_sales_transactions = self.df.merge(
             dim_time, on=[
-                'invoice_date', 'year', 'quarter', 'month', 'day', 'week', 'day_of_week', 'timestamp_id'
+                'time_id', 'year', 'quarter',
+                'month', 'day', 'week', 'day_of_week'
             ], how='left'
-        ).merge(
+        )
+
+        # Merge with dim_location
+        fact_sales_transactions = fact_sales_transactions.merge(
             dim_location, left_on='location', right_on='location_name', how='left'
-        ).merge(
+        )
+
+        # Debugging to ensure 'location_id' exists
+        if 'location_id' not in fact_sales_transactions.columns:
+            raise KeyError("'location_id' is missing after merging with dim_location.")
+
+        # Merge with dim_product
+        fact_sales_transactions = fact_sales_transactions.merge(
             dim_product, on=['stock_code', 'description'], how='left'
-        ).merge(
+        )
+
+        # Merge with dim_metadata_transactions
+        fact_sales_transactions = fact_sales_transactions.merge(
             dim_metadata_transactions, on=['transaction_category'], how='left'
-        ).merge(
-            dim_customer, on=['customer_code'], how='left'
         )
 
+        # Generate transaction_id
         fact_sales_transactions['transaction_id'] = fact_sales_transactions.apply(
-            lambda row: generate_hash(row['invoice_id'], row['timestamp_id']), axis=1
+            lambda row: generate_hash(row['invoice'] + str(pd.Timestamp(row['time_id']).timestamp())), axis=1
         )
 
+        # Select final columns
         fact_sales_transactions = fact_sales_transactions[[
-            'transaction_id', 'time_id', 'location_id', 'customer_id', 'product_id', 'metadata_id',
-            'invoice', 'quantity', 'price'
+            'transaction_id', 'time_id', 'location_id', 'customer_id', 'product_id',
+            'metadata_id', 'invoice', 'quantity', 'price'
         ]]
         fact_sales_transactions.rename(columns={'invoice': 'invoice_id'}, inplace=True)
+
         return fact_sales_transactions
 
 def generate_warehouse_sales_tables(bg_logger, data: pd.DataFrame):
@@ -267,18 +402,18 @@ def generate_warehouse_sales_tables(bg_logger, data: pd.DataFrame):
     dim_product = dim_product_gen.generate_table()
     bg_logger.info("dim_product table generated successfully.")
 
-    dim_customer_gen = DimCustomerGenerator(base_gen.df)
-    dim_customer = dim_customer_gen.generate_table()
-    bg_logger.info("dim_customer table generated successfully.")
-
     dim_metadata_gen = DimMetadataTransactionGenerator(base_gen.df)
     dim_metadata_transactions = dim_metadata_gen.generate_table()
     bg_logger.info("dim_metadata_transactions table generated successfully.")
 
+    dim_customer_gen = DimCustomerGenerator(base_gen.df)
+    dim_customer = dim_customer_gen.generate_table()
+    bg_logger.info("dim_customer table generated successfully.")
+
     fact_gen = FactSalesTransactionGenerator(base_gen.df)
     fact_sales_transactions = fact_gen.generate_table(
         dim_time, dim_location,
-        dim_product, dim_metadata_transactions, dim_customer
+        dim_product, dim_metadata_transactions
     )
     bg_logger.info(
         "fact_sales_transactions table generated successfully."
@@ -293,6 +428,7 @@ def generate_warehouse_sales_tables(bg_logger, data: pd.DataFrame):
         'dim_metadata_transactions': dim_metadata_transactions,
         'fact_sales_transactions': fact_sales_transactions,
     }
+
 
 def validate_warehouse_sales_data(
     bg_logger,

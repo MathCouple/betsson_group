@@ -14,6 +14,17 @@ from infra.models.dims_integrity import (
 from infra.models.facts_integrity import (
     FactSalesTransactionValidation
 )
+from infra.models.dim import (
+    DimTime,
+    DimLocation,
+    DimCustomer,
+    DimProduct,
+    DimMetadataTransaction
+)
+from infra.models.fact import (
+    FactSalesTransaction
+)
+
 
 NORMATIZE_LOCATION_MAP = {
     "USA": "United States",
@@ -41,6 +52,17 @@ STAGE_III_COLUMNS = [
     'lost_sales', 'financial_details',
     'maintenance_adjustment']
 
+# ORM mapping
+models_map = {
+    "dim_time": DimTime,
+    "dim_location": DimLocation,
+    "dim_product": DimProduct,
+    "dim_customer": DimCustomer,
+    "dim_metadata_transactions": DimMetadataTransaction,
+    "fact_sales_transactions": FactSalesTransaction,
+}
+
+# validate orm mapping
 validation_models = {
     "dim_time": DimTimeValidation,
     "dim_location": DimLocationValidation,

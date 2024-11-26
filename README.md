@@ -327,16 +327,10 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 - **Requirements**: Python 3.9+ and Jupyter Notebook.
 - **Use a virtual environment**: `python -m venv .venv`
 - **Installation**: Run `pip install -r requirements_xxx.txt`. The requirements file includes two sets of dependencies: one specifically for the Jupyter Notebook (.ipynb) and another for the Python-based script. This separation ensures that the notebook's additional dependencies are only installed if you plan to use it, keeping the main script lightweight and efficient.
-- **Create and fill a file called '.env' in the root directory of this project**:
+- **Create and fill a file called '.env' in the root directory of this project. Fill it with the following environment variables**:
   ```bash
-    WAREHOUSE_MSSQL_SERVER="your_mssql_server"
-    WAREHOUSE_MSSQL_DATABASE="your_mssql_database"
-    WAREHOUSE_MSSQL_USER="your_mssql_user"
-    WAREHOUSE_MSSQL_PASSWORD="your_mssql_password"
+    MSSQL_WAREHOUSE_URL="mssql+pyodbc://<username>:<password>@<host>/<database>?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes"
   ```
-- **Attention**: The flag `_MIGRATE_DATABASE` at the beginning of the main scripts is a boolean that controls the database migration behavior.
-  - When set to `True`, it will overwrite or create the database and tables.
-  - When set to `False`, it will append data to the existing database and tables, validating constraints only on natural keys.
 - **Run the main script**: `python solution.py` on your terminal, from the root project diretory.
 
 ### 3.1. Main Script
@@ -356,6 +350,7 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
         - CLOUD_LOST_PRODUCTS_WORDS - a list of words that indicate lost products.
         - STAGE_III_COLUMNS - renamed columns to be used in the pipeline.
         - validation_models - mapper containing Pydantic models to validate the data.
+        - models_map - mapper containing sqlalchemy models to validate the data.
 
     - `pipeline_lineage.py` - It stores stages related to the pipeline.
       - get_csv_df - Reads CSV files into pandas DataFrame format.
@@ -363,13 +358,13 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
     - `pipeline_transformers.py` - Business rules (BR) and general transformations (GR) to be used on the pipeline.
       - sanitize_column_data - BR related to fill null data and format types.
       - sanitize_text - BR related to sanitize text data. It will remove special characters, and replace accented characters with their unaccented counterparts.
-      - BaseTableGenerator - GR related to generate base tables.
-      - DimTimeGenerator - GR related to generate the time dimension.
-      - DimLocationGenerator - GR related to generate the location dimension.
-      - DimCustomerGenerator - GR related to generate the customer dimension.
-      - DimProductGenerator - GR related to generate the product dimension.
-      - DimMetadataTransactionsGenerator - GR related to generate the metadata transactions dimension.
-      - FactSalesTransactionsGenerator - GR related to generate the sales transactions fact table.
+      - BaseTableGenerator - BR related to generate base tables.
+      - DimTimeGenerator - BR related to generate the time dimension.
+      - DimLocationGenerator - BR related to generate the location dimension.
+      - DimCustomerGenerator - BR related to generate the customer dimension.
+      - DimProductGenerator - BR related to generate the product dimension.
+      - DimMetadataTransactionsGenerator - BR related to generate the metadata transactions dimension.
+      - FactSalesTransactionsGenerator - BR related to generate the sales transactions fact table.
       - generate_warehouse_sales_tables - GR related to generate the warehouse tables.
       - validate_warehouse_sales_data - BR related to validate the warehouse tables.
       - validate_data_integrity - BR related to validate the data integrity.

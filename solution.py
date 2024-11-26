@@ -21,6 +21,10 @@ from infra.pipeline import (
     sanitize_column_data,
     sanitize_text
 )
+from infra.handlers import (
+    MssqlConnector,
+    migrate_database
+)
 
 
 # Load environment variables
@@ -35,9 +39,18 @@ overall_stage_save_params = {
     'compression': 'snappy',
     'index': False
 }
+bg_logger = create_logger(
+    os.path.join(root_path, "_warehousing.log"),
+)
 
+# if not checked, it will be created locally
 _MIGRATE_DATABASE = True
 
+MSSQL_WAREHOUSE_URL=os.getenv("MSSQL_WAREHOUSE_URL")
+
+if not MSSQL_WAREHOUSE_URL:
+    bg_logger.info("The environment variable 'MSSQL_WAREHOUSE_URL' is not set. Saving data locally.")
+    _MIGRATE_DATABASE = False
 
 def main_bg_invoice_warehousing():
     """
@@ -45,9 +58,6 @@ def main_bg_invoice_warehousing():
     """
     # Initialize base utilities
     _start_time = get_current_utc_time()
-    bg_logger = create_logger(
-        os.path.join(root_path, "_warehousing.log"),
-    )
     _ingestion_path = os.path.join(
         root_path,
         "ingestion"
@@ -84,33 +94,45 @@ def main_bg_invoice_warehousing():
         f_sanitize_column_data=sanitize_column_data
     )
 
-    # Process stage I
-    stage_i_df = transformer.stage_1(
-        base_df
+    # every stage can be saved to speed up the process
+    # starting from the previous stage if it exists
+    # stage_i_df = transformer.stage_1(
+    #     base_df
+    # )
+
+    # stage_ii_df = transformer.stage_2(
+    #     stage_i_df
+    # )
+
+    # stage_iii_df = transformer.stage_3(
+    #     stage_ii_df
+    # )
+
+    # transformer.save_parquet_stage(
+    #     stage_iii_df, 'stage_iii.parquet'
+    # )
+    stage_iii_df = pd.read_parquet(
+        'stage_iii.parquet'
     )
 
-    stage_ii_df = transformer.stage_2(
-        stage_i_df
-    )
-
-    stage_iii_df = transformer.stage_3(
-        stage_ii_df
-    )
-
-    stage_iv_df = transformer.generates_dw_tables(
-        stage_iii_df
-    )
-
-    del stage_iii_df
-
-    # Generate warehouse-ready data for database
-    # (Placeholder for future database migration logic)
     if _MIGRATE_DATABASE:
-        bg_logger.info("Migrating warehouse-ready data to the database.")
+        try:
+            mssql_instance = MssqlConnector(
+                bg_logger,
+                MSSQL_WAREHOUSE_URL
+            )
+            engine = mssql_instance.connect()
+            migrate_database(bg_logger, engine)
+            transformer.generates_dw_tables(
+                stage_iii_df,
+                engine
+            )
 
-    # Generate analysis and reports (future feature placeholders)
+        except Exception as e:  # pylint: disable=broad-except
+            bg_logger.error("Error migrating data to the warehouse: %s", e)
+        finally:
+            mssql_instance.close_connection()
 
-    # Logic for generating analysis and reports
 
     bg_logger.info("Execution time: %s", get_current_utc_time() - _start_time)
 

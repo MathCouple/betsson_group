@@ -38,21 +38,21 @@ class FactSalesTransaction(Base):
     __table_args__ = {'schema': _SCHEMA_NAME}
 
     transaction_id = Column(String, primary_key=True)
-    time_id = Column(Integer, ForeignKey('sales_warehousing.dim_time.time_id'), nullable=False)
-    location_id = Column(
-        String,
-        ForeignKey('sales_warehousing.dim_location.location_id'), nullable=False
-    )
-    customer_id = Column(
-        String, ForeignKey('sales_warehousing.dim_customer.customer_id'), nullable=True
-    )
-    product_id = Column(
-        String, ForeignKey('sales_warehousing.dim_product.product_id'), nullable=False
-    )
-    metadata_id = Column(
-        String, ForeignKey('sales_warehousing.dim_metadata_transactions.metadata_id'), nullable=False
-    )
+    time_id = Column(String, ForeignKey('sales_warehousing.dim_time.time_id'), nullable=False)
+    location_id = Column(String, ForeignKey('sales_warehousing.dim_location.location_id'), nullable=False)
+    customer_id = Column(String, ForeignKey('sales_warehousing.dim_customer.customer_id'), nullable=True)
+    product_id = Column(String, ForeignKey('sales_warehousing.dim_product.product_id'), nullable=False)
+    metadata_id = Column(String, ForeignKey('sales_warehousing.dim_metadata_transactions.metadata_id'), nullable=False)
     invoice_id = Column(String, nullable=False)
     quantity = Column(Integer, nullable=False)
-    price = Column(DECIMAL(precision=10, scale=2), nullable=True)
-    metadata_transactions = relationship("DimMetadataTransaction", back_populates="transactions")
+    price = Column(DECIMAL(precision=10, scale=2), nullable=True) 
+
+    # Define relationships to dimensions
+    time = relationship("DimTime", back_populates="transactions")
+    location = relationship("DimLocation", back_populates="transactions")
+    customer = relationship("DimCustomer", back_populates="transactions")
+    product = relationship("DimProduct", back_populates="transactions")
+    metadata_transactions = relationship(
+        "DimMetadataTransaction",
+        back_populates="transactions"
+    )

@@ -44,7 +44,7 @@ class DimTime(Base):
     __tablename__ = 'dim_time'
     __table_args__ = {'schema': _SCHEMA_NAME}
 
-    time_id = Column(Integer, primary_key=True, autoincrement=True)
+    time_id = Column(String, primary_key=True)
     date = Column(Date, nullable=False)
     year = Column(Integer, nullable=False)
     quarter = Column(Integer, nullable=False)
@@ -131,4 +131,4 @@ class DimMetadataTransaction(Base):
     transaction_description = Column(String(255), nullable=False)
     transaction_category = Column(String(50), nullable=False)
 
-    transactions = relationship("FactSalesTransaction", back_populates="metadata")
+    transactions = relationship("FactSalesTransaction", back_populates="metadata_transactions")

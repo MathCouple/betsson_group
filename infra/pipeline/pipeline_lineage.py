@@ -6,7 +6,10 @@ import re
 from datetime import datetime
 from typing import Callable
 
+import numpy as np
 import pandas as pd
+import sqlalchemy.orm
+from sqlalchemy.orm import sessionmaker
 
 from infra.pipeline import (
     NORMATIZE_LOCATION_MAP,
@@ -15,19 +18,9 @@ from infra.pipeline import (
     generate_warehouse_sales_tables,
     validate_warehouse_sales_data,
     validation_models,
-    validate_data_integrity
+    validate_data_integrity,
+    models_map
 )
-from infra.models.dim import (
-    DimTime,
-    DimLocation,
-    DimCustomer,
-    DimProduct,
-    DimMetadataTransaction
-)
-from infra.models.fact import (
-    FactSalesTransaction
-)
-
 
 
 escaped_keywords = [re.escape(word) for word in CLOUD_LOST_PRODUCTS_WORDS if word]
@@ -255,6 +248,7 @@ class PipelineTransformer:
         # specialized DTYPES
         df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce')
         df['price'] = pd.to_numeric(df['price'], errors='coerce')
+        df['price'] = df['price'].replace({np.nan: None})
 
         # treating different date formats and converting to ISO 8601
         df['invoice_date'] = pd.to_datetime(df['invoice_date'], errors='coerce')
@@ -267,26 +261,79 @@ class PipelineTransformer:
         self.bg_logger.info("Stage III completed in %s", str(datetime.now() - start_time))
         return df
 
-    def generates_dw_tables(self, df: pd.DataFrame) -> pd.DataFrame:
+    def generates_dw_tables(self, df: pd.DataFrame, engine: sqlalchemy.engine.Engine) -> None:
         """
-        Applies the fourth stage of transformations to the data.
-        Args:
-            df: DataFrame containing the data.
-        Returns:
-            The transformed DataFrame.
-        """
-        start_time = datetime.now()
-        # generates dw tables
-        _tables = generate_warehouse_sales_tables(self.bg_logger, df)
-        _generating_integrity_test = (
-            validate_warehouse_sales_data(self.bg_logger, _tables, validation_models)
-        )
+        Applies the fourth stage of transformations to the data, maps to ORM models,
+        validates, and inserts the data into the database.
 
-        validate_data_integrity(self.bg_logger, _generating_integrity_test)
-        self.bg_logger.info(
-            "Stage IV Data Warehouse tables generated in %s",
-            str(datetime.now() - start_time)
-        )
+        Args:
+            df: DataFrame containing the raw data.
+            engine: SQLAlchemy Engine object for database interaction.
+
+        Returns:
+            None
+        """
+        # Create a session factory
+        Session = sessionmaker(bind=engine)
+
+        # Start a session
+        with Session() as session:
+            if not isinstance(session, sqlalchemy.orm.Session):
+                raise TypeError("Expected a SQLAlchemy Session object, got a different type.")
+
+            start_time = datetime.now()
+            self.bg_logger.info("Starting generation of Data Warehouse tables.")
+
+            try:
+                # Generate dimension and fact tables
+                _tables = generate_warehouse_sales_tables(self.bg_logger, df)
+                self.bg_logger.info("Generated warehouse tables: %s", list(_tables.keys()))
+
+                # Validate generated tables
+                _generating_integrity_test = validate_warehouse_sales_data(
+                    self.bg_logger, _tables, validation_models
+                )
+                validate_data_integrity(self.bg_logger, _generating_integrity_test)
+
+                # Iterate over tables and insert data
+                for table_name, table_data in _tables.items():
+                    if table_name not in models_map:
+                        self.bg_logger.warning(
+                            "Table '%s' is not mapped to an ORM model. Skipping.", table_name
+                        )
+                        continue
+
+                    # Get the ORM model class
+                    model_class = models_map[table_name]
+                    self.bg_logger.info(
+                        "Inserting records into '%s' using ORM model '%s'.",
+                        table_name, model_class.__name__
+                    )
+
+                    try:
+                        # Transform the DataFrame into ORM model instances
+                        records = [
+                            model_class(**row) for row in table_data.to_dict(orient="records")
+                        ]
+
+                        # Insert into the database
+                        session.bulk_save_objects(records)
+                        session.commit()
+                        self.bg_logger.info(
+                            "Inserted %d records into '%s' successfully.",
+                            len(records), table_name
+                        )
+                    except Exception as e:
+                        session.rollback()
+                        self.bg_logger.error(
+                            "Error inserting data into '%s': %s", table_name, str(e)
+                        )
+                        raise
+            finally:
+                self.bg_logger.info(
+                    "Stage IV Data Warehouse tables generated and inserted in %s",
+                    datetime.now() - start_time
+                )
 
     def save_parquet_stage(
         self, df: pd.DataFrame,
