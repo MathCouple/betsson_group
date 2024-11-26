@@ -91,8 +91,7 @@
 ### Base General Process
 | Feature                                          | In Scope (MVP) | Out of Scope |
 |--------------------------------------------------|----------------|--------------|
-| README.md-based documentation (iterative view)  | ✅             |              |
-| PDF documentation (static)                      | ✅             |              |
+| README.md-based documentation (iterative view - GH WEB)  | ✅             |              |
 | Module and package details                      | ✅             |              |
 | Base real case assumptions                      | ✅             |              |
 | Packages and modules partially/fully reusable   | ✅             |              |
