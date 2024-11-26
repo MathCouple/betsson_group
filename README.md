@@ -64,6 +64,7 @@
 - [Aggregations & Reporting](#aggregations--reporting)
   - [1. Insight - (AVTQ) Absolute Value of Transaction Quantities and Revenues across different categories](#1-insight---avtq-absolute-value-of-transaction-quantities-and-revenues-across-different-categories)
   - [2. Insight - (SLICR) Sales Location Impact Comparison on Revenue](#2-insight---slicr-sales-location-impact-comparison-on-revenue)
+  - [3. Insight - (CLV) Customer Lifetime Value](#3-insight---clv-customer-lifetime-value)
   - [4. Data-Driven Deep](#4-data-driven-deep)
 - [Tunning Scenario](#tunning-scenario)
 
@@ -256,6 +257,9 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 </p>
 
 ## 2.2 Documentation
+
+
+- Anonimized data.
 
 ### Tables and Columns
 
@@ -479,7 +483,7 @@ ORDER BY
 
 #### 2. Insight - (SLICR): Sales Location Impact Comparison on Revenue
 Monthly contribution of sales transactions by location, expressed as a percentage of the total absolute revenue for all sales transactions.
-A transaction is a sale when transaction_category = 'sale'.
+A transaction is a valid sale when transaction_category = 'sale'.
 
 ```sql
 WITH location_sales AS (
@@ -527,21 +531,60 @@ ORDER BY
     This scenario highlights locations with a higher percentage of sales revenue. Based on these insights, we can create targeted promotions and enhance marketing strategies in strong locations while identifying opportunities to explore untapped potential in weaker locations.
     A solid approach would involve analyzing the factors contributing to the performance of both strong and weak locations, followed by implementing appropriate campaigns and lead generation strategies.
   </p>
-  <img src="./assets/slicr_result.png" alt="AVQT result" style="max-width: 100%; width: 700px;">
+  <img src="./assets/slicr_result.png" alt="AVQT result" style="max-width: 100%; width: 500px;">
 </div>
 
 
 <br>
 <br>
 
-### 4. Data-Driven Deep
-- Our approaches are determined by business rules and the data we have available. These factors also shape the reports we aim to generate and follow.
-- The first insight provides a general overview of what happened in the specific date range. From there, we could adopt monthly approaches to better understand the seasonality of this pain point. By offering the best services to our clients, we can also gain deeper insights into how to remain truly competitive.
-- The second insight provides a more detailed view of the data, focusing on the location impact on revenue. This approach could be used to identify the best locations to invest in, as well as the locations that need more attention. Monitoring and properly acting, we avoid weaking strong locations.
+### 3. Insight - (CLV): Customer Lifetime Value
+Understand most valuable customers and their revenues over their lifetime. Considered total revenue generated (lifetime_value) and engagement (months_active) for known customers, without filtering by location or transaction type. Valid sales are those with transaction_category = 'sale'. Not distinguishing if they are Legal Entities or Individuals.
 
-*In data we trust*
+```sql
+WITH customer_lifetime_value AS (
+    SELECT
+        c.customer_id,
+        SUM(CASE WHEN m.transaction_category = 'sale' THEN f.quantity * f.price ELSE 0 END) AS lifetime_value,
+        COUNT(DISTINCT CONCAT(t.year, '-', t.month)) AS months_active,
+        CASE WHEN SUM(CASE WHEN m.transaction_category = 'sale' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS valid_sale_flag
+    FROM master.sales_warehousing.fact_sales_transactions AS f
+    INNER JOIN master.sales_warehousing.dim_customer AS c
+        ON f.customer_id = c.customer_id
+    INNER JOIN master.sales_warehousing.dim_time AS t
+        ON f.time_id = t.time_id
+    INNER JOIN master.sales_warehousing.dim_metadata_transactions AS m
+        ON f.metadata_id = m.metadata_id
+    WHERE c.is_known_customer = 1
+    GROUP BY c.customer_id
+)
+SELECT
+    customer_id,
+    lifetime_value,
+    months_active,
+    lifetime_value / NULLIF(months_active, 0) AS average_monthly_value
+FROM customer_lifetime_value
+ORDER BY lifetime_value DESC;
+```
+
+<div style="display: flex; align-items: center; justify-content: center;">
+  <p style="max-width: 400px; margin-right: 20px;">
+    This visualization demonstrates the Customer Lifetime Value (CLV) analysis results.
+    This scenario highlights the most valuable customers based on their lifetime value and engagement. By identifying these high-value customers, we can develop targeted marketing strategies to enhance customer loyalty and retention. Strategies might include personalized offers, loyalty programs, and exclusive promotions to increase customer engagement and lifetime value. Additionally, for instance, we can associate this with the first insight to understand how customers engage with the company and its offered products based on their location, helping to retain new leads and maintain existing ones, enhancing the overall customer experience.
+  </p>
+  <img src="./assets/clv_result.png" alt="AVQT result" style="max-width: 100%; width: 500px;">
+</div>
+
+### 4. Data-Driven Deep
+*Our approaches are guided by business rules (market, client, company, etc) and the data available to us. These factors shape the reports we generate and follow, ensuring alignment with our strategic goals.*
+- The first insight offers a broad overview of events within the specified date range. From this starting point, we could analyze monthly trends to uncover the seasonality of key pain points. By consistently delivering excellent services to our clients, we gain deeper insights into how to remain competitive and innovative.
+- The second insight delves into location-specific impacts on revenue, providing a detailed perspective. This approach helps identify the most profitable locations to prioritize for investment, as well as underperforming areas that require strategic intervention. By continuously monitoring and taking timely action, we can prevent strong locations from weakening and improve weaker locations’ performance.
+- The third insight focuses on customer lifetime value (CLV), a critical metric for understanding customer engagement and loyalty. By identifying high-value customers and their engagement levels, we can leverage other insights to develop targeted strategies. I can think in a broad range of strategies that could include directly engaging with these clients, implementing new marketing approaches, or introducing new products to further engage them, while also strengthening the brand to attract new customers.
 
 <br>
+
+**In data we trust**
+
 <br>
 
 ---
@@ -572,4 +615,8 @@ We would need approaches like governance, to ensure optimal database performance
 
 
 ---
-*Matheus Alves. @ 2024*
+<br>
+<br>
+
+*This sales Retail refers to the Attam Store.*  
+*Matheus Alves @ 2024*
