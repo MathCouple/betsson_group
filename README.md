@@ -95,21 +95,21 @@
 | PDF documentation (static)                      | ✅             |              |
 | Module and package details                      | ✅             |              |
 | Base real case assumptions                      | ✅             |              |
-| Packages and modules partially/fully reusable   | ✅             |            |
-| Base data quality check                         | ✅             |            |
+| Packages and modules partially/fully reusable   | ✅             |              |
+| Base data quality check                         | ✅             |              |
 | Cloud-related environments                      |                | ✅           |
 | Full production-ready                           |                | ✅           |
 | Non-Python frameworks for ETL                   |                | ✅           |
-| Specific metrics logging (to be used in Prometheus, for instance)           |                | ✅           |
-| Deeply statistic approaches in warehouse/data cleaning           |                | ✅           |
-| Specific Architecture Consumption/Tunning Scenario|| ✅           |
+| Specific metrics logging (to be used in Prometheus, for instance) |        | ✅           |
+| Deeply statistic approaches in warehouse/data cleaning |         | ✅           |
+| Specific Architecture Consumption/Tuning Scenario |           | ✅           |
 
 ### Base ETL Considerations
 | Feature                                          | In Scope (MVP) | Out of Scope |
 |--------------------------------------------------|----------------|--------------|
 | Process diagrams                                | ✅             |              |
 | Isolated environment (.venv, optional)          | ✅             |              |
-| `pip` requirements (`pip install -r requirements_xx.txt`) | ✅  |              |
+| `pip` requirements (`pip install -r requirements_xx.txt`) | ✅   |              |
 | APIs                                            |                | ✅           |
 | Scheduler-ready                                 |                | ✅           |
 
@@ -119,8 +119,9 @@
 | Data full metadata                              | ✅             |              |
 | Client basic tuning example (MSSQL Query Plan)  | ✅             |              |
 | Decision explained                              | ✅             |              |
-| Physical computing/database architecture and setup |              | ✅           |
+| Physical computing/database architecture and setup |          | ✅           |
 | Server basic tuning (on possible queries)       |                | ✅           |
+
 
 <br>
 <br>
