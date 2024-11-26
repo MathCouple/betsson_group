@@ -7,6 +7,7 @@ It is meant to be run as orchestrator for the application.
 import os
 
 import pandas as pd
+import dotenv
 
 from utils import (
     get_current_utc_time,
@@ -20,6 +21,10 @@ from infra.pipeline import (
     sanitize_column_data,
     sanitize_text
 )
+
+
+# Load environment variables
+dotenv.load_dotenv()
 
 
 # based on current file location, assuming it's root
@@ -92,9 +97,11 @@ def main_bg_invoice_warehousing():
         stage_ii_df
     )
 
-    stage_iv_df = transformer.stage_4(
+    stage_iv_df = transformer.generates_dw_tables(
         stage_iii_df
     )
+
+    del stage_iii_df
 
     # Generate warehouse-ready data for database
     # (Placeholder for future database migration logic)

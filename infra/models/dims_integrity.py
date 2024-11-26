@@ -2,11 +2,11 @@
 Pydantic base validations for data integrity table
 relates to dimensions
 """
+from typing import Optional
 from pydantic import (
     BaseModel,
     Field
 )
-from typing import Optional
 import pandas as pd
 
 
@@ -36,7 +36,12 @@ class DimTimeGenerator(BaseModel):
         self.df['minute'] = self.df['invoice_date'].dt.minute
         self.df['second'] = self.df['invoice_date'].dt.second
 
-        dim_time = self.df[['date', 'invoice_date', 'year', 'quarter', 'month', 'day', 'week', 'day_of_week', 'hour', 'minute', 'second']].drop_duplicates()
+        dim_time = self.df[[
+            'date', 'invoice_date', 'year',
+            'quarter', 'month', 'day', 'week',
+            'day_of_week', 'hour', 'minute',
+            'second'
+        ]].drop_duplicates()
 
         dim_time['time_id'] = range(1, len(dim_time) + 1)
 
@@ -48,7 +53,7 @@ class DimLocationValidation(BaseModel):
     - `location_id`: Optional positive integer.
     - `location_name`: Mandatory string with a max length of 255 characters.
     """
-    location_id: Optional[int] = Field(None, ge=1)
+    location_id: str = Field(None, max_length=32)
     location_name: Optional[str] = Field(None, max_length=255)
 
 class DimCustomerValidation(BaseModel):
@@ -58,7 +63,7 @@ class DimCustomerValidation(BaseModel):
     - `customer_code`: Optional string with a max length of 255 characters.
     - `is_known_customer`: Boolean indicating if the customer is identified.
     """
-    customer_id: int
+    customer_id: str = Field(..., max_length=32)
     customer_code: Optional[str] = Field(None, max_length=255)
     is_known_customer: bool
 
@@ -69,9 +74,9 @@ class DimProductValidation(BaseModel):
     - `stock_code`: Mandatory string with a max length of 255 characters.
     - `description`: Mandatory string with a max length of 255 characters.
     """
-    product_id: Optional[int] = Field(None, ge=1)
+    product_id: str = Field(..., max_length=32)
     stock_code: str = Field(..., max_length=255)
-    description: str = Field(..., max_length=255)
+    description: str = Field(None, max_length=255)
 
 class DimMetadataTransactionValidation(BaseModel):
     """
@@ -81,6 +86,6 @@ class DimMetadataTransactionValidation(BaseModel):
     - `transaction_category`: Mandatory string with a max length of 50 characters
       indicating the type of transaction (e.g., 'sale', 'adjustment', 'return').
     """
-    metadata_id: Optional[int] = Field(None, ge=1)
+    metadata_id: str = Field(None, max_length=32)
     transaction_description: str = Field(..., max_length=255)
     transaction_category: str = Field(..., max_length=50)

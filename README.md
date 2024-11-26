@@ -40,9 +40,19 @@
   - [0.1.3 Base Warehouse Considerations](#base-warehouse-considerations)
 - [1. Assumptions & Abnormalities](#1-assumptions--abnormalities)
   - [1.1 Base Considerations](#11-base-considerations)
-  - [1.1 Overall Data Assumptions](#12-overall-data-assumptions)
-  - [1.2 Overall Data Abnormalities](#13-overall-data-abnormalities)
+  - [1.2 Overall Data Assumptions](#12-overall-data-assumptions)
+  - [1.3 Overall Data Abnormalities](#13-overall-data-abnormalities)
+  - [1.3.1 Country column](#131-country-column)
+  - [1.3.2 Customer ID column](#132-customer-id-column)
+  - [1.3.3 Price column](#133-price-column)
+  - [1.3.4 Quantity column](#134-quantity-column)
+  - [1.3.5 Description column](#135-description-column)
+  - [1.3.6 StockCode column](#136-stockcode-column)
+  - [1.3.7 General columns data](#137-general-columns-data)
 - [2. Pipeline Architecture Diagram](#2-pipeline-architecture-diagram)
+- [2.1 Data Warehouse Schema Diagram](#21-data-warehouse-schema-diagram)
+- [2.2 Documentation](#22-documentation)
+  - [Tables and Columns](#tables-and-columns)
 - [3. 2. Packages and modules overview](#2-packages-and-modules-overview)
   - [3.0. Running the project](#30-running-the-project) 
   - [3.1. Main Script](#31-main-script)
@@ -50,14 +60,7 @@
   - [3.3. ingestion](#33-ingestion)
   - [3.4. utils](#34-utils)
   - [3.5. assets](#35-assets)
-- [4. Jupyter Notebook Structure](#3-jupyter-notebook-structure)
-  - [4.1. Base Data Process](#31-base-data-process)
-    - [4.1.1. Importing Base Dataframe](#311-importing-base-dataframe)
-    - [4.1.2. Briefly Checking the Data](#312-briefly-checking-the-data)
-    - [4.1.3. Dataset Base Info](#313-dataset-base-info)
-    - [4.1.4. Data Variations](#314-data-variations)
-    - [3.1.5. Base Memory Usage](#315-base-memory-usage)
-    - [3.1.6. Overview of Top and Bottom Data](#316-overview-of-top-and-bottom-data)
+- [4. General Code Structure](#4-general-code-structure)
 - [Aditional Notes](#additional-notes)
 
 ---
@@ -122,12 +125,12 @@
 ### 1.1 Base Considerations
 
 There are two main logic on this assesment answers.
-  - **Straightforward (Jupyter Notebook):** A logical, straightforward solution.
-  - **Reusable (Script):** Focuses on structured, reusable long-term practices.
+  - **draw.ipynb (Jupyter Notebook):** Containing draws.
+  - **solution.py (Script):** Pipeline solution.
 Consideration:
-  - Collaborative discussions in real scenarios with specialized teams would refine/reformulate solutions.
-  - **This consideration applies to every main assumption I make.**
-
+  - Assumptions usually are discussed with the areas/teams involved. In a real-world scenario, I would discuss these assumptions with the business team to ensure that they are aligned with the business rules and requirements.
+    - **This consideration applies to every main assumption I make.**
+ 
 <br>
 <br>
 
@@ -303,7 +306,7 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 #### `fact_sales_transactions`
 | Column         | Description                                                              |
 |-----------------|--------------------------------------------------------------------------|
-| `transaction_id`| Primary key for the fact table.                                          |
+| `transaction_id`| Primary key for the fact table.                                           |
 | `time_id`       | Foreign key referencing `dim_time`.                                      |
 | `location_id`   | Foreign key referencing `dim_location`.                                  |
 | `customer_id`   | Foreign key referencing `dim_customer`.                                  |
@@ -326,15 +329,15 @@ For rows without a Description or Price, I am assuming the last recorded Descrip
 - **Installation**: Run `pip install -r requirements_xxx.txt`. The requirements file includes two sets of dependencies: one specifically for the Jupyter Notebook (.ipynb) and another for the Python-based script. This separation ensures that the notebook's additional dependencies are only installed if you plan to use it, keeping the main script lightweight and efficient.
 - **Create and fill a file called '.env' in the root directory of this project**:
   ```bash
-    export MSSQL_SERVER="your_mssql_server"
-    export MSSQL_DATABASE="your_mssql_database"
-    export MSSQL_USER="your_mssql_user"
-    export MSSQL_PASSWORD="your_mssql_password"
+    WAREHOUSE_MSSQL_SERVER="your_mssql_server"
+    WAREHOUSE_MSSQL_DATABASE="your_mssql_database"
+    WAREHOUSE_MSSQL_USER="your_mssql_user"
+    WAREHOUSE_MSSQL_PASSWORD="your_mssql_password"
   ```
 - **Attention**: The flag `_MIGRATE_DATABASE` at the beginning of the main scripts is a boolean that controls the database migration behavior.
   - When set to `True`, it will overwrite or create the database and tables.
   - When set to `False`, it will append data to the existing database and tables, validating constraints only on natural keys.
-- **Run the main script**: `python main_one_time_analysis.py` on the root project diretory.
+- **Run the main script**: `python solution.py` on your terminal, from the root project diretory.
 
 ### 3.1. Main Script
 - **`solution.ipynb`**: Straightforward End-to-End Approach to Address the Challenge
@@ -414,9 +417,3 @@ It doesn't make part of the codebase.
 - Save data.
 
 Code can include intermediate passes like "saving stages".
----
-
-## Additional Notes
-- It’s possible to map the mode of StockCode and compare it with the base descriptions to better understand general cases.
-
-- It’s possible to map the mode of StockCode and adjust prices based on the mode of the same StockCode.

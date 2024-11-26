@@ -78,7 +78,7 @@ class PipelineTransformer:
         start_time = datetime.now()
 
         # Specialized string dtypes
-        df['Country'] = df['Country'].apply(self.f_sanitize_column_data)
+        df['Country'] = df['Country'].apply(self.f_sanitize_text)
         # correct acronyms and normalizing location names
         df['Country'] = df['Country'].replace(NORMATIZE_LOCATION_MAP)
         self.bg_logger.info("Stage I Country Column transformed")
@@ -242,6 +242,7 @@ class PipelineTransformer:
 
         # correcting column names
         df.columns = STAGE_III_COLUMNS
+        df.rename(columns={'country': 'location'}, inplace=True)
         self.bg_logger.info("Stage III Column names corrected")
 
         # formating dtypes on data
@@ -280,8 +281,12 @@ class PipelineTransformer:
         _generating_integrity_test = (
             validate_warehouse_sales_data(self.bg_logger, _tables, validation_models)
         )
+
         validate_data_integrity(self.bg_logger, _generating_integrity_test)
-        self.bg_logger.info("Stage IV Data Warehouse tables generated in %s", str(datetime.now() - start_time))
+        self.bg_logger.info(
+            "Stage IV Data Warehouse tables generated in %s",
+            str(datetime.now() - start_time)
+        )
 
     def save_parquet_stage(
         self, df: pd.DataFrame,

@@ -11,7 +11,7 @@ __table_args__ - Scheman name and Index for the table declarations
 vars with Column use - columns of the table
 """
 from sqlalchemy import (
-    Column, Integer, String, Float, Date, Boolean, ForeignKey
+    Column, Integer, String, Date, Boolean
 )
 from sqlalchemy.orm import (
     relationship
@@ -70,7 +70,7 @@ class DimLocation(Base):
     __tablename__ = 'dim_location'
     __table_args__ = {'schema': _SCHEMA_NAME}
 
-    location_id = Column(Integer, primary_key=True, autoincrement=True)
+    location_id = Column(String, primary_key=True)
     location_name = Column(String(255), nullable=True)
 
     transactions = relationship("FactSalesTransaction", back_populates="location")
@@ -88,7 +88,7 @@ class DimCustomer(Base):
     __tablename__ = 'dim_customer'
     __table_args__ = {'schema': _SCHEMA_NAME}
 
-    customer_id = Column(Integer, primary_key=True)
+    customer_id = Column(String, primary_key=True)
     customer_code = Column(String(255), nullable=True)
     is_known_customer = Column(Boolean, nullable=False)
 
@@ -107,7 +107,7 @@ class DimProduct(Base):
     __tablename__ = 'dim_product'
     __table_args__ = {'schema': _SCHEMA_NAME}
 
-    product_id = Column(Integer, primary_key=True, autoincrement=True)
+    product_id = Column(String, primary_key=True)
     stock_code = Column(String(255), nullable=False)
     description = Column(String(255), nullable=False)
 
@@ -121,12 +121,13 @@ class DimMetadataTransaction(Base):
     Attributes:
         metadata_id (int): Primary key for the metadata transactions table.
         transaction_description (str): Description of the transaction type or reason.
-        transaction_category (str): Category of the transaction (e.g., "sale", "adjustment", "return", "fee").
+        transaction_category (str): Category of the transaction
+        (e.g., "sale", "adjustment", "return", "fee").
     """
     __tablename__ = 'dim_metadata_transactions'
     __table_args__ = {'schema': 'sales_warehousing'}
 
-    metadata_id = Column(Integer, primary_key=True, autoincrement=True)
+    metadata_id = Column(String, primary_key=True)
     transaction_description = Column(String(255), nullable=False)
     transaction_category = Column(String(50), nullable=False)
 
