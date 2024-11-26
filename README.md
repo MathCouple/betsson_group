@@ -89,6 +89,7 @@
 
 
 ### Base General Process
+### Base General Process
 | Feature                                          | In Scope (MVP) | Out of Scope |
 |--------------------------------------------------|----------------|--------------|
 | README.md-based documentation (iterative view)  | ✅             |              |
@@ -100,7 +101,7 @@
 | Cloud-related environments                      |                | ✅           |
 | Full production-ready                           |                | ✅           |
 | Non-Python frameworks for ETL                   |                | ✅           |
-| Specific metrics logging (to be used in Prometheus, for instance) |        | ✅           |
+| Specific metrics logging (to be used in Prometheus, for instance) |  | ✅           |
 | Deeply statistic approaches in warehouse/data cleaning |         | ✅           |
 | Specific Architecture Consumption/Tuning Scenario |           | ✅           |
 
@@ -109,7 +110,7 @@
 |--------------------------------------------------|----------------|--------------|
 | Process diagrams                                | ✅             |              |
 | Isolated environment (.venv, optional)          | ✅             |              |
-| `pip` requirements (`pip install -r requirements_xx.txt`) | ✅   |              |
+| `pip` requirements (`pip install -r requirements_xx.txt`) | ✅     |              |
 | APIs                                            |                | ✅           |
 | Scheduler-ready                                 |                | ✅           |
 
@@ -119,9 +120,8 @@
 | Data full metadata                              | ✅             |              |
 | Client basic tuning example (MSSQL Query Plan)  | ✅             |              |
 | Decision explained                              | ✅             |              |
-| Physical computing/database architecture and setup |          | ✅           |
+| Physical computing/database architecture and setup |              | ✅           |
 | Server basic tuning (on possible queries)       |                | ✅           |
-
 
 <br>
 <br>
