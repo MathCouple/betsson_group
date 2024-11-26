@@ -342,3 +342,72 @@ It doesn't make part of the codebase.
 - It’s possible to map the mode of StockCode and compare it with the base descriptions to better understand general cases.
 
 - It’s possible to map the mode of StockCode and adjust prices based on the mode of the same StockCode.
+
+# Data Warehouse Schema Documentation
+
+## Tables and Columns
+
+### `dim_time`
+| Column        | Description                                                                 |
+|---------------|-----------------------------------------------------------------------------|
+| `time_id`     | Primary key for the time dimension.                                         |
+| `date`        | The full date in `YYYY-MM-DD` format.                                       |
+| `year`        | The year of the transaction.                                               |
+| `quarter`     | The quarter of the year (1-4).                                             |
+| `month`       | The month of the year (1-12).                                              |
+| `day`         | The day of the month (1-31).                                               |
+| `week`        | The week of the year (1-53).                                               |
+| `day_of_week` | The name of the day (e.g., "Monday").                                       |
+| `hour`        | The hour of the transaction (0-23, optional).                              |
+| `minute`      | The minute of the transaction (0-59, optional).                            |
+| `second`      | The second of the transaction (0-59, optional).                            |
+
+---
+
+### `dim_location`
+| Column          | Description                                                              |
+|------------------|--------------------------------------------------------------------------|
+| `location_id`    | Primary key for the location dimension.                                  |
+| `location_name`  | The name of the location where the transaction occurred.                |
+
+---
+
+### `dim_customer`
+| Column             | Description                                                          |
+|---------------------|----------------------------------------------------------------------|
+| `customer_id`       | Primary key for the customer dimension.                              |
+| `customer_code`     | Unique code identifying the customer, if available.                 |
+| `is_known_customer` | Indicates whether the customer is known (`True`) or anonymous (`False`). |
+
+---
+
+### `dim_product`
+| Column         | Description                                                              |
+|-----------------|--------------------------------------------------------------------------|
+| `product_id`    | Primary key for the product dimension.                                   |
+| `stock_code`    | Unique code identifying the product stock.                               |
+| `description`   | Description of the product.                                             |
+
+---
+
+### `dim_metadata_transactions`
+| Column                   | Description                                                    |
+|---------------------------|----------------------------------------------------------------|
+| `metadata_id`             | Primary key for the metadata transactions table.              |
+| `transaction_description` | Description of the transaction type or reason.                |
+| `transaction_category`    | Category of the transaction (e.g., "sale", "return", "adjustment", "fee"). |
+
+---
+
+### `fact_sales_transactions`
+| Column         | Description                                                              |
+|-----------------|--------------------------------------------------------------------------|
+| `transaction_id`| Primary key for the fact table.                                          |
+| `time_id`       | Foreign key referencing `dim_time`.                                      |
+| `location_id`   | Foreign key referencing `dim_location`.                                  |
+| `customer_id`   | Foreign key referencing `dim_customer`.                                  |
+| `product_id`    | Foreign key referencing `dim_product`.                                   |
+| `metadata_id`   | Foreign key referencing `dim_metadata_transactions`.                    |
+| `invoice_id`    | Unique identifier for the invoice.                                       |
+| `quantity`      | Number of units involved in the transaction (can be negative for returns). |
+| `price`         | Price per unit of the product (nullable; may include refunds or adjustments). |

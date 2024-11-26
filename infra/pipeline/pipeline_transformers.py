@@ -167,6 +167,8 @@ class FactSalesTransactionGenerator(BaseTableGenerator):
         """
         Creates the fact_sales_transactions table, linking dimension tables with the main dataset.
         """
+        self.df['invoice'] = self.df['invoice'].astype(str)
+
         fact_sales_transactions = self.df.merge(dim_time, on=['invoice_date', 'year', 'quarter', 'month', 'day', 'week', 'day_of_week'], how='left')\
                                    .merge(dim_location, left_on='location', right_on='location_name', how='left')\
                                    .merge(dim_product, on=['stock_code', 'description'], how='left')\
@@ -223,6 +225,7 @@ def generate_warehouse_sales_tables(bg_logger, data: pd.DataFrame):
         'fact_sales_transactions': fact_sales_transactions
     }
 
+
 def validate_warehouse_sales_data(
     bg_logger,
     dataframes: Dict[str, pd.DataFrame],
@@ -246,7 +249,6 @@ def validate_warehouse_sales_data(
     results = {}
     for table_name, df in dataframes.items():
         bg_logger.info(f"Validating table: {table_name}")
-
         model = validation_models.get(table_name)
         if not model:
             raise ValueError(f"No validation model found for table: {table_name}")
@@ -254,22 +256,21 @@ def validate_warehouse_sales_data(
         errors = []
         valid_rows = []
 
-        # Collect validation errors/sucess for each row
         for idx, row in df.iterrows():
             try:
+                # Attempt to validate the row
+                validated_row = model(**row.to_dict())
                 if return_valid_rows:
                     valid_rows.append(row)
             except ValidationError as e:
+                # Collect validation errors
                 errors.append({"row_index": idx, "error": e.errors()})
 
         results[table_name] = {
             "valid_rows_count": len(df) - len(errors),
             "invalid_rows_count": len(errors),
             "errors": errors,
+            "valid_rows": pd.DataFrame(valid_rows) if return_valid_rows else None,
         }
-
-        if return_valid_rows:
-            # Convert the valid rows back to a DataFrame and include them in the results
-            results[table_name]["valid_rows"] = pd.DataFrame(valid_rows)
 
     return results

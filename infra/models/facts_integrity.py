@@ -29,6 +29,6 @@ class FactSalesTransactionValidation(BaseModel):
     customer_id: Optional[int] = Field(None, ge=1)
     product_id: int = Field(..., ge=1)
     metadata_id: int = Field(..., ge=1)
-    invoice_id: int = Field(..., ge=1)
+    invoice_id: str
     quantity: int
     price: Optional[float]

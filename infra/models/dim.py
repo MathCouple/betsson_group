@@ -71,7 +71,7 @@ class DimLocation(Base):
     __table_args__ = {'schema': _SCHEMA_NAME}
 
     location_id = Column(Integer, primary_key=True, autoincrement=True)
-    location_name = Column(String(255), nullable=False)
+    location_name = Column(String(255), nullable=True)
 
     transactions = relationship("FactSalesTransaction", back_populates="location")
 

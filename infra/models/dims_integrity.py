@@ -7,7 +7,7 @@ from pydantic import (
     Field
 )
 from typing import Optional
-from datetime import date
+import pandas as pd
 
 
 class DimTimeValidation(BaseModel):
@@ -23,17 +23,24 @@ class DimTimeValidation(BaseModel):
     - `day_of_week`: String with a max length of 10 characters (e.g., "Monday").
     - `hour`, `minute`, `second`: Optional time components with valid ranges.
     """
-    time_id: Optional[int] = Field(None, ge=1)
-    date: date
-    year: int = Field(..., ge=1900, le=2100)
-    quarter: int = Field(..., ge=1, le=4)
-    month: int = Field(..., ge=1, le=12)
-    day: int = Field(..., ge=1, le=31)
-    week: int = Field(..., ge=1, le=53)
-    day_of_week: str = Field(..., max_length=10)
-    hour: Optional[int] = Field(None, ge=0, le=23)
-    minute: Optional[int] = Field(None, ge=0, le=59)
-    second: Optional[int] = Field(None, ge=0, le=59)
+class DimTimeGenerator(BaseModel):
+    """
+    Generates the dim_time table.
+    """
+    def generate_table(self) -> pd.DataFrame:
+        """
+        Creates the dim_time table from the preprocessed data.
+        """
+        self.df['date'] = self.df['invoice_date'].dt.date
+        self.df['hour'] = self.df['invoice_date'].dt.hour
+        self.df['minute'] = self.df['invoice_date'].dt.minute
+        self.df['second'] = self.df['invoice_date'].dt.second
+
+        dim_time = self.df[['date', 'invoice_date', 'year', 'quarter', 'month', 'day', 'week', 'day_of_week', 'hour', 'minute', 'second']].drop_duplicates()
+
+        dim_time['time_id'] = range(1, len(dim_time) + 1)
+
+        return dim_time
 
 class DimLocationValidation(BaseModel):
     """
@@ -42,7 +49,7 @@ class DimLocationValidation(BaseModel):
     - `location_name`: Mandatory string with a max length of 255 characters.
     """
     location_id: Optional[int] = Field(None, ge=1)
-    location_name: str = Field(..., max_length=255)
+    location_name: Optional[str] = Field(None, max_length=255)
 
 class DimCustomerValidation(BaseModel):
     """
