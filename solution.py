@@ -49,7 +49,9 @@ _MIGRATE_DATABASE = True
 MSSQL_WAREHOUSE_URL=os.getenv("MSSQL_WAREHOUSE_URL")
 
 if not MSSQL_WAREHOUSE_URL:
-    bg_logger.info("The environment variable 'MSSQL_WAREHOUSE_URL' is not set. Saving data locally.")
+    bg_logger.warning(
+        "The environment variable 'MSSQL_WAREHOUSE_URL'"
+    )
     _MIGRATE_DATABASE = False
 
 def main_bg_invoice_warehousing():
@@ -96,24 +98,24 @@ def main_bg_invoice_warehousing():
 
     # every stage can be saved to speed up the process
     # starting from the previous stage if it exists
-    # stage_i_df = transformer.stage_1(
-    #     base_df
-    # )
+    stage_i_df = transformer.stage_1(
+        base_df
+    )
 
-    # stage_ii_df = transformer.stage_2(
-    #     stage_i_df
-    # )
+    stage_ii_df = transformer.stage_2(
+        stage_i_df
+    )
 
-    # stage_iii_df = transformer.stage_3(
-    #     stage_ii_df
-    # )
+    stage_iii_df = transformer.stage_3(
+        stage_ii_df
+    )
 
     # transformer.save_parquet_stage(
     #     stage_iii_df, 'stage_iii.parquet'
     # )
-    stage_iii_df = pd.read_parquet(
-        'stage_iii.parquet'
-    )
+    # stage_iii_df = pd.read_parquet(
+    #     'stage_iii.parquet'
+    # )
 
     if _MIGRATE_DATABASE:
         try:
@@ -133,6 +135,18 @@ def main_bg_invoice_warehousing():
             bg_logger.error("Error migrating/saving data to the warehouse: %s", e)
         finally:
             mssql_instance.close_connection()
+    else:
+        bg_logger.info("Saving stage III data locally.")
+        bg_logger.warning(
+            "Note: DW Will only be generated in MSSQL"
+            ". To follow the process, please, read the README requirements to run this project"
+        )
+
+        transformer.save_parquet_stage(
+            stage_iii_df,
+            'stage_iii.parquet',
+            **overall_stage_save_params
+        )
 
 
     bg_logger.info("Execution time: %s", get_current_utc_time() - _start_time)

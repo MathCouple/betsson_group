@@ -53,7 +53,7 @@
 - [2.1 Data Warehouse Schema Diagram](#21-data-warehouse-schema-diagram)
 - [2.2 Documentation](#22-documentation)
   - [Tables and Columns](#tables-and-columns)
-- [3. 2. Packages and modules overview](#2-packages-and-modules-overview)
+- [3. Packages and modules overview](#3-packages-and-modules-overview)
   - [3.0. Running the project](#30-running-the-project) 
   - [3.1. Main Script](#31-main-script)
   - [3.2. infra](#32-infra)
@@ -424,6 +424,7 @@ Code can include intermediate passes like "saving stages".
 ## Aggregations & Reporting
 
 There are one main file in the data composition. All views could be a Materialized (gpt, correct it. I'm not sure if MSSQL has this feature) view, to be used in the future.
+
 ### Aggregations.sql
 
 #### 1. Insight - (AVTQ) Absolute Value of Transaction Quantities and Revenues across different categories.
@@ -471,6 +472,10 @@ ORDER BY
   </p>
   <img src="./assets/avqt_result.png" alt="AVQT result" style="max-width: 100%; width: 700px;">
 </div>
+
+<br>
+
+#### 2. Insight - (AVTQ) Sales location impact on revenue.
 
 
 ### 4. Data-Driven Deep

@@ -96,17 +96,17 @@ def create_warehouse_schema(engine):
     Raises an error if the issue is connection-related.
     """
     with engine.begin() as connection:
+        try:
+            connection.execute(text("""
+                CREATE SCHEMA sales_warehousing';
+            """))
+        except SQLAlchemyError:
             try:
                 connection.execute(text("""
-                    CREATE SCHEMA sales_warehousing';
+                    IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'sales_warehousing')
+                    BEGIN
+                        EXEC('CREATE SCHEMA sales_warehousing');
+                    END
                 """))
-            except SQLAlchemyError:
-                try:
-                    connection.execute(text("""
-                        IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'sales_warehousing')
-                        BEGIN
-                            EXEC('CREATE SCHEMA sales_warehousing');
-                        END
-                    """))
-                except SQLAlchemyError:
-                    raise RuntimeError("Error creating warehouse schema.")
+            except SQLAlchemyError as exc:
+                raise RuntimeError("Error creating warehouse schema.") from exc
